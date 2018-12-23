@@ -6,12 +6,10 @@
 template <class T>
 class Node {
     public:
-        Node(T node) {
+        Node(T node, int index) {
             _node = node;
-            _black = false;
-            _red = false;
+            _index = index;
         }
-        Node() {}
         ~Node() {}
 
         void add_edge(Node<T> *edge) {
@@ -19,8 +17,7 @@ class Node {
         }
 
         T _node;
-        bool _black;
-        bool _red;
+        int _index;
         std::vector<Node<T>*> _edges;
 
 };
