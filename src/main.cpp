@@ -9,7 +9,7 @@ using namespace std;
 int main() {
     digraph<int> p;
     string line;
-    while (getline(cin, line)) {
+    while (getline(cin, line) || line == "") {
         istringstream this_line(line);
         istream_iterator<int> begin(this_line), end;
         vector<int> values(begin, end);
@@ -25,10 +25,10 @@ int main() {
         std::vector<std::vector<Node<int>>> vec = p.tarjan();
             for (int i = 0; i < vec.size(); i++) {
                 cout << "Cycle number " << i << endl;
-                for (int j = 0; j < vec[i].size() - 1; j++) {
-                    cout << vec[i][j]._node << " - ";
+                for (int j = vec[i].size() - 1; j > 0; j--) {
+                    cout << vec[i][j]._node << " -> ";
                 }
-                cout << vec[i][vec[i].size() - 1]._node << endl;
+                cout << vec[i][0]._node << endl;
             }
     }
     else {

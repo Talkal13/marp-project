@@ -1,0 +1,59 @@
+\documentclass{article}
+\usepackage{mathtools}
+
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}%
+\title{Practica de Metodos Algoritmicos de Resolución de Problemas}
+\author{Pablo Vazquez Gomis  \\
+	Universidad Complutense de Madrid \\
+	}
+
+\date{\today}
+% Hint: \title{what ever}, \author{who care} and \date{when ever} could stand 
+% before or after the \begin{document} command 
+% BUT the \maketitle command MUST come AFTER the \begin{document} command! 
+\begin{document}
+
+\maketitle
+
+
+\begin{abstract}
+Practica opcional del primer cuatrimestre para la asignatura de Metodos Algorítmicos de Resolución de Problemas.
+\end{abstract}
+
+\section{Introducción}
+\subsection{Descripción de la práctica}
+Implementar o Java o en C++ un algoritmo, que dado un grafo dirigido, detecte si tiene o no
+ciclos. En caso de ser acíclico, ha de listar sus vértices en orden topológico. Si hay más de uno
+posible, los puede listar en cualquiera de ellos. En caso de ser cíclico, ha de listar sus componentes
+fuertemente conexas (cada una es un conjunto de vértices). El algoritmo para esta segunda parte
+puede verse en el Capítulo 22 del Cormen (2001, segunda edición).
+
+\subsection{Implementación}
+
+La práctica se puede dividir en 3 partes diferenciables:
+\begin{enumerate}
+\item \label{1} Comprobar si un grafo es cíclico o no
+\item \label{2} los vértices en orden topológico
+\item Listar los componentes fuertemente conexos 
+\end{enumerate}
+
+\paragraph{}Dado que en al ordenar los vértices de el punto 2 uno de los casos base devuelve error si el
+grafo es cíclico y su complejidad esta en orden $ O(\abs{V} + \abs{E}) $ utilizaremos esa funcion para comprobar el punto 1.
+
+\paragraph{}En caso positivo, habremos encontrado una solución al punto 1 en orden $ O(\abs{V} + \abs{E}) $. En caso negativo, tendremos la solución al punto 2
+en el mismo orden.
+
+\paragraph{}Para resolver el punto 3 utilizamos el algoritmo de Tarjan\cite{tarjan} para encontrar componentes fuertemente conexas,
+el cual resuelve el problema utilizando \textit{Depth First Search (DFS)} con una complejidad de $ O(\abs{V} + \abs{E}) $.
+
+\section{Ordenación topológica}
+
+\section{Conclusions}\label{conclusions}
+
+
+\begin{thebibliography}{9}
+\bibitem{tarjan} Robert E. Tarjan. \textit{Depth-First Search and Linear Graph Algorithms}.
+Stanford University. Stanford, California.
+\end{thebibliography}
+
+\end{document}
