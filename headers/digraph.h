@@ -29,23 +29,6 @@ class digraph {
 				
 		}
 
-		bool isCyclic() {
-			int ticks = 0;
-			std::stack<Node<T>*> S;
-			int index[_map.size()];
-			init_struct<int>(index, _map.size(), -1);
-			bool stack[_map.size()];
-			init_struct<bool>(stack, _map.size(), false);
-			bool x = false;
-			typename std::unordered_map<T, Node<T>>::iterator it; 
-			for (it = _map.begin(); it != _map.end(); ++it) {
-				if (index[it->second._index] == -1) {
-					x |= dfs_cycle(&it->second, ticks, S, index, stack);
-				}
-					
-			}
-			return x;
-		}
 
 		bool dfs_topological_sort(std::vector<Node<T>> &list) {
 			//std::vector<Node<T>> list;
@@ -108,45 +91,29 @@ class digraph {
 			}
 		}
 
+
+		/**
+		 * 
+		 * Topological sort
+		 * Linear sort of all the elements keeping the initial union between vertices
+		 * 
+		 * @black[]: array of elements that have been hard-visited, that means that have been visited at least once in any path
+		 * @red[]: array of elements visited in this path 
+		 * 
+		 * 
+		 */
 		bool dfs_topological_sort(Node<T> *v, std::vector<Node<T>> &list, bool red[], bool black[]) {
-			if (black[v->_index]) return true;
-			if (red[v->_index]) return false;
+			if (black[v->_index]) return true; // Node already visited in other path, no need to check again
+			if (red[v->_index]) return false; // Node already visited in the same path -> Cycle encountered 
 			red[v->_index] = true;
-			for (int i = 0; i < v->_edges.size(); i++) {
-				Node<T> *w = v->_edges.at(i);
+			for (int i = 0; i < v->_edges.size(); i++) { 
+				Node<T> *w = v->_edges.at(i); //For each edge of node v -> sort topological
 				dfs_topological_sort(w, list, red, black);
 			}
-			black[v->_index] = true;
+			black[v->_index] = true; //mark as seen
 			typename std::vector<Node<T>>::iterator it = list.begin();
-			list.insert(it, *v);
-			return true;
-		}
-
-		bool dfs_cycle(Node<T> *v, int &ticks, std::stack<Node<T>*> &S, int index[], bool stack[]) {
-			index[v->_index] = ticks;
-			//v->_lowlink = index;
-			ticks += 1;
-			S.push(v);
-			stack[v->_index] = true;
-
-			for (int i = 0; i < v->_edges.size(); ++i) {
-				Node<T> *w = v->_edges.at(i);
-				if (index[w->_index] == -1) {
-					return dfs_cycle(w, ticks, S, index, stack);
-					//v->_lowlink = std::min(v->_lowlink, w->_lowlink);
-				}
-				else if (stack[w->_index]) {
-					//v->_lowlink = std::min(v->_lowlink, w->_index);
-					stack[v->_index] = false;
-					S.pop();
-					return true;
-				}
-			}
-
-			stack[v->_index] = false;
-			S.pop();
-
-			return false;
+			list.insert(it, *v); // Insert the nodes at the begining of the list as we are traversing it in reverse 
+			return true; //return true -> Acyclid
 		}
 
 

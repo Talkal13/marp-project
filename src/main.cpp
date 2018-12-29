@@ -19,7 +19,6 @@ int main() {
         p.add_edges(key, values);
     }
     
-    (p.isCyclic()) ? cout << "p is Cyclic" << endl : cout << "p is Acyclic" << endl;
     std::vector<Node<int>> v;
     if (p.dfs_topological_sort(v)) {
         std::vector<std::vector<Node<int>>> vec = p.tarjan();
@@ -32,17 +31,11 @@ int main() {
             }
     }
     else {
-        
-       // if (p.dfs_topological_sort(v)) {
             std::vector<Node<int>>::iterator it;
             for (int i = 0; i < v.size() -1 ; i++) {
                 cout << (v.at(i))._node << " - ";
             }
             cout << v.at(v.size() - 1)._node << endl;
-        //}
-        //else {
-         //   cout << "p is Acyclid" << endl;
-        //}
     }
     
     

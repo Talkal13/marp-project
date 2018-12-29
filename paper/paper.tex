@@ -1,5 +1,8 @@
 \documentclass{article}
 \usepackage{mathtools}
+\usepackage{csquotes}
+\usepackage{algorithm}% http://ctan.org/pkg/algorithms
+\usepackage{algpseudocode}% http://ctan.org/pkg/algorithmicx
 
 \DeclarePairedDelimiter\abs{\lvert}{\rvert}%
 \title{Practica de Metodos Algoritmicos de Resolución de Problemas}
@@ -47,13 +50,34 @@ en el mismo orden.
 el cual resuelve el problema utilizando \textit{Depth First Search (DFS)} con una complejidad de $ O(\abs{V} + \abs{E}) $.
 
 \section{Ordenación topológica}
-
+\paragraph{Definición:}Usando la definición propuesta por A. B. Kahn\cite{kahn}:
+\begin{displayquote}
+A list in topological order is such that no element appears in it until after all elements appearing on all paths leading to the particular element have been listed. 
+\end{displayquote}
+En otras palabras, dado que es necesario que el grafo sea acíclico para poder ordenarlo topológicamente, el raíz del grafo sera el primer elemento de la lista ordenada
+y los elementos siguientes seran la ordenacion topológica de sus hijos.
+\paragraph{Implementación:} Usando DFS, podemos recorer la lista desde una raiz del grafo cualquiera hasta el final de un camino,
+Continuando esta estrategia, la lista se compondra recursivamente:
+ \[ vertice + dfsTopologicalSort(e) \mid \forall e \in node.edges \] 
+Esto se consigue, añadiendo el nodo a la lista en primera posicion cuando todas su aristas han sido visitadas.
+\section{Componentes fuertemente conexos}
+\paragraph{Definición:} Dado un grafo dirigido G, supongamos que para cada par de vertices v,w
+existe los caminos: $p_1: v \Rightarrow w$ y $p_2: w \Rightarrow v$, entonces G es fuertemente conexo.
+\paragraph{Implementación:} El problema lo resolveremos con el algoritmo propuesto por Robert E. Tarjan\cite{tarjan}, el cual se basa en estos puntos:
+\begin{enumerate}
+	\item Usando \textit{DFS} busca por todos los nodos siguiendo los caminos del grafo, asignando un indice y un \textbf{lowpoint-index} unico a cada uno la primera vez que se visita el nodo.
+	\item El \textbf{lowpoint-index} representa el indice del nodo mas bajo al que se puede llegar siguiendo los caminos desde el nodo inicial y se va actualizando en el backtranking de
+\textit{DFS}.
+	\item Cuando el siguiendo un camino, se llega a el nodo inicial, todos los nodos que tengan el mismo \textbf{lowpoint-index} son nodos pertencientes a el componente fuertemente conexos
+	\item Para evitar que el algoritmo dependa de el nodo inicial, que se elige aleatoriamente, se lleva la cuenta de los nodos recorridos con un stack. A la hora de recuperar componentes fuertemente conexas,
+solo los nodos que estan en el stack pertenecen a él.
+\end{enumerate}
 \section{Conclusions}\label{conclusions}
-
 
 \begin{thebibliography}{9}
 \bibitem{tarjan} Robert E. Tarjan. \textit{Depth-First Search and Linear Graph Algorithms}.
 Stanford University. Stanford, California.
+\bibitem{kahn} A. B. Kahn. \textit{Topological sorting of large networks}. Westinghouse Electric Corporation, Baltimore, Maryland
 \end{thebibliography}
 
-\end{document}
+\end{document} 
