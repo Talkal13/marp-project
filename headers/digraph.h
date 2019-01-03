@@ -11,7 +11,10 @@
 template <class T>
 class digraph {
 	public:
-		digraph() {}
+		digraph() {
+			n_nodes = 0;
+			n_edges = 0;
+		}
 		~digraph() {
 		}
 
@@ -29,18 +32,46 @@ class digraph {
 				
 		}
 
+		bool has_node(T key) {
+			return _map.find(key) != _map.end();
+		}
 
-		bool dfs_topological_sort(std::vector<Node<T>> &list) {
-			//std::vector<Node<T>> list;
+		void add_edge(T key, T edge) {
+			add_node(key);
+			add_node(edge);
+			_map.at(key).add_edge(&_map.at(edge));
+		}
+
+		/**
+		 * Precondition: Acyclid(G(V, E)) 
+		 * 
+		 */ 
+		std::stack<Node<T>> dfs_topological_sort() {
+			std::stack<Node<T>> list;
 			bool red[_map.size()];
 			init_struct<bool>(red, _map.size(), false);
 			bool black[_map.size()];
 			init_struct<bool>(black, _map.size(), false);
-			bool x = true;
 			typename std::unordered_map<T, Node<T>>::iterator it; 
 			for (it = _map.begin(); it != _map.end(); ++it) {
 				if (!black[it->second._index]) {
-					x &= dfs_topological_sort(&it->second, list, red, black);
+					dfs_topological_sort(&it->second, list, red, black);
+				}
+					
+			}
+			return list;
+		}
+
+		bool dfs_search_cycles() {
+			bool red[_map.size()];
+			init_struct<bool>(red, _map.size(), false);
+			bool black[_map.size()];
+			init_struct<bool>(black, _map.size(), false);
+			bool x = false;
+			typename std::unordered_map<T, Node<T>>::iterator it; 
+			for (it = _map.begin(); it != _map.end(); ++it) {
+				if (!black[it->second._index]) {
+					x |= dfs_search_cycles(&it->second, red, black);
 				}
 					
 			}
@@ -80,6 +111,10 @@ class digraph {
 			return components;
 		}
 
+		//metadata
+		int n_nodes = 0;
+		int n_edges = 0;
+
 
 	private:
 
@@ -91,6 +126,26 @@ class digraph {
 			}
 		}
 
+		/**
+		 * 
+		 * Search for cycles
+		 *
+		 */
+		bool dfs_search_cycles(Node<T> *v, bool red[], bool black[]) {
+			// Node already visited in other path, no need to check again
+			if (black[v->_index]) return false; 
+			// Node already visited in the same path -> Cycle encountered 
+			if (red[v->_index]) return true;
+			red[v->_index] = true;
+			bool x = false;
+			for (int i = 0; i < v->_edges.size(); i++) { 
+				Node<T> *w = v->_edges.at(i); //For each edge of node v -> sort topological
+				x |= dfs_search_cycles(w, red, black);
+				if (x) return x;
+			}
+			black[v->_index] = true; //mark as seen
+			return x;
+		}
 
 		/**
 		 * 
@@ -99,21 +154,22 @@ class digraph {
 		 * 
 		 * @black[]: array of elements that have been hard-visited, that means that have been visited at least once in any path
 		 * @red[]: array of elements visited in this path 
-		 * 
+		 *
 		 * 
 		 */
-		bool dfs_topological_sort(Node<T> *v, std::vector<Node<T>> &list, bool red[], bool black[]) {
-			if (black[v->_index]) return true; // Node already visited in other path, no need to check again
-			if (red[v->_index]) return false; // Node already visited in the same path -> Cycle encountered 
+		void dfs_topological_sort(Node<T> *v, std::stack<Node<T>> &list, bool red[], bool black[]) {
+			// Node already visited in other path, no need to check again
+			if (black[v->_index]) return; 
+			// Node already visited in the same path -> Cycle encountered 
+			if (red[v->_index]) return;
 			red[v->_index] = true;
 			for (int i = 0; i < v->_edges.size(); i++) { 
 				Node<T> *w = v->_edges.at(i); //For each edge of node v -> sort topological
 				dfs_topological_sort(w, list, red, black);
 			}
 			black[v->_index] = true; //mark as seen
-			typename std::vector<Node<T>>::iterator it = list.begin();
-			list.insert(it, *v); // Insert the nodes at the begining of the list as we are traversing it in reverse 
-			return true; //return true -> Acyclid
+			list.push(*v);
+			return; //return true -> Acyclid
 		}
 
 
@@ -137,7 +193,7 @@ class digraph {
 			// Increment counter to ensure unique indexes
 			ticks += 1;
 
-			S.push(v);
+			S.push(v); // O(1)
 			stack[node] = true;
 
 			for (int i = 0; i < v->_edges.size(); ++i) {
@@ -160,7 +216,7 @@ class digraph {
 					w  = S.top();
 					S.pop(); // Pop each node of the cycle from the stack to make sure is only reachable from this path
 					stack[w->_index] = false;
-					component.push_back(*w);
+					component.push_back(*w); // O(1) -> Amortized time
 				} while (w->_index != v->_index);
 				components.push_back(component);
 			}
@@ -169,4 +225,6 @@ class digraph {
 		
 
         std::unordered_map<T, Node<T>> _map;
+
+		
 };
