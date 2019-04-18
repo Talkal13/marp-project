@@ -1,11 +1,7 @@
 if [[ -d $1 ]]; then
-    for d in $1/*; do
-        if [[ -d $d ]]; then
-            for graph in $d/*; do
-                ../bin/main $graph ../out/graph-rantree.dat
-            done
-        fi
+    for graph in $1/*; do
+        ../bin/pracmarp -f $graph -o ../out/$2.dat
     done
-    gnuplot -c graph.p -p
+    gnuplot -e "filename='$2'" graph.p 
 fi
 

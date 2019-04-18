@@ -100,6 +100,7 @@ int main(int argc, char *argv[]) {
 void write_to_file(std::string fileout, std::tuple<double, double, double, int> result) {
     ofstream file;
     file.open(fileout, std::fstream::app);
+    if (file.fail()) return;
     file << get<3>(result) << "\t" << get<0>(result) << "\t" << get<1>(result) << "\t" << get<2>(result) << endl;
     file.close();
 }
@@ -125,6 +126,7 @@ template <class A>
 void translate_dimacs(digraph<A> &graph, std::string filename) {
     std::ifstream file;
     file.open(filename);
+    if (file.fail()) return;
     char delimeter;
     std::string s;
     int nodes, edges;

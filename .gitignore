@@ -37,5 +37,10 @@
 *.fls
 *.synctex.gz
 
-resources/*
-graphs/*
+resources*/*
+graphs*/*
+bin/*
+out/*
+paper/*
+.vscode/*
+.vscode/launch.json
