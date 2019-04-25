@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
                 if (optopt == 'c')
                     cerr << "la opcion " << optopt << " necesita un argumento" << endl;
                 else if (isprint (optopt))
-                    cerr << "Opcion " << optopt << "desconociad" << endl;
+                    cerr << "Opcion " << optopt << " desconocida" << endl;
                 print_help_message();
             default:
                 break;

@@ -15,13 +15,16 @@ class digraph {
 			n_nodes = 0;
 			n_edges = 0;
 		}
+		
 		~digraph() {
-		}
+		
+		 }
 
 		void add_node(T key) {
 			Node<T> node(key, _map.size());
 			_map.insert(std::pair<T, Node<T>>(key, node));
 		}
+
 
 		void add_edges(T key, std::vector<T> edges) {
 			add_node(key);
@@ -41,6 +44,12 @@ class digraph {
 			add_node(edge);
 			_map.at(key).add_edge(&_map.at(edge));
 		}
+
+		Node<T> operator [](T index) {
+			return _map[index];
+		}
+
+
 
 		/**
 		 * Precondition: Acyclid(G(V, E)) 
