@@ -66,6 +66,6 @@ std::vector<Node<T>> bnb_max_clique(digraph<T> G) {
 
 
 template <class T>
-void bnb_max_clique(digraph<T> G, std::vector<Node<T>> &solution, int i) {
+void bnb_max_clique(Graph<T> G, std::vector<Node<T>> &solution, int i) {
 	
 }

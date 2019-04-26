@@ -1,19 +1,23 @@
+#pragma once
+
 #include <vector>
+#include <unordered_map>
 #include <set>
 
 template <class T>
-class Graph {
+class graph {
     public:
         // Constructors and Destructors
-        Graph();
-        ~Graph();
+        graph();
+        ~graph();
 
-        void add_node(T, std::set<T> _edges);
+        void add_node(T);
+        
+        void add_edge(std::pair<T,T>);
 
-
-        set::set<T> V;
+        std::vector<T> operator[](T key);
+        
     
     private:
-        std::vector<T> _set;
-        set::set<T> V;
+        std::unordered_map<T, std::vector<T>> _map;
 }
