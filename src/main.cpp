@@ -1,4 +1,5 @@
 #include "../headers/digraph.h"
+#include "../headers/graph.h"
 #include <string>
 #include <sstream>
 #include <utility>
@@ -6,6 +7,8 @@
 #include <fstream>
 #include <time.h>
 #include <unistd.h>
+#include "../headers/max_clique.h"
+#include <thread>         // http://www.cplusplus.com/reference/thread/thread/
 
 
 using namespace std;
@@ -21,9 +24,11 @@ void translate_dimacs(digraph<A> &graph, std::string filename);
 std::tuple<double, double, double, int> run_test_from_file(std::string filename);
 std::tuple<double, double, double, int> run_test_random(int seed, bool define, int N);
 void write_to_file(std::string fileout, std::tuple<double, double, double, int> result);
+void write_to_file(std::string fileout, std::tuple<double, int> result);
 template <class B>
 std::tuple<double, double, double, int> run_test(digraph<B> &digraph);
 void print_help_message();
+std::tuple<double, int> run_developer_test(int size);
 
 int main(int argc, char *argv[]) {
     
@@ -34,10 +39,11 @@ int main(int argc, char *argv[]) {
     bool random = true;
     bool define = false;
     bool out = false;
+    bool developer = false;
     int size = 1;
     int seed = 0;
     int arg;
-    while ((arg = getopt(argc, argv, "hs:o:f:l:n:v:e:")) != -1) {
+    while ((arg = getopt(argc, argv, "hs:o:f:l:n:v:e:d")) != -1) {
         switch (arg) {
             case 'h':
                 print_help_message();
@@ -66,6 +72,9 @@ int main(int argc, char *argv[]) {
             case 'e':
                 N_EDGES = stoi(optarg);
                 break;
+            case 'd':
+                developer = true;
+                break;
             case '?':
                 if (optopt == 'c')
                     cerr << "la opcion " << optopt << " necesita un argumento" << endl;
@@ -75,6 +84,18 @@ int main(int argc, char *argv[]) {
             default:
                 break;
         }
+    }
+
+    if (developer) {
+        std::tuple<double, int> result;
+        for (int i = 1; i < size; i++) {
+
+            result = run_developer_test(i);
+            if (out) {
+                write_to_file(fileout, result);
+            }
+        }
+        return 0;
     }
     
     std::tuple<double, double, double, int> result;
@@ -102,6 +123,14 @@ void write_to_file(std::string fileout, std::tuple<double, double, double, int> 
     file.open(fileout, std::fstream::app);
     if (file.fail()) return;
     file << get<3>(result) << "\t" << get<0>(result) << "\t" << get<1>(result) << "\t" << get<2>(result) << endl;
+    file.close();
+}
+
+void write_to_file(std::string fileout, std::tuple<double, int> result) {
+    ofstream file;
+    file.open(fileout, std::fstream::app);
+    if (file.fail()) return;
+    file << get<1>(result) << "\t" << get<0>(result) << endl;
     file.close();
 }
 
@@ -148,6 +177,53 @@ void translate_dimacs(digraph<A> &graph, std::string filename) {
     file.close();
 }
 
+void max_clique_concurrent(graph<int> g, set<int> &result, benchmark &b, bool mode) {
+    b.complete_time = clock();
+    if (mode)
+        result = bnb_increment_max_clique_benchmarks(g, b);
+    else {
+        
+        result = bnb_max_clique(g);
+        
+    }
+    b.complete_time = clock() - b.complete_time;
+    return;
+}
+
+
+std::tuple<double, int> run_developer_test(int size) {
+    graph<> g;
+    for (int i = 1; i <= size; i++) {
+        for (int j = 1; j <= size; j++ )
+            if (i % j == 0) g.add_edge(std::make_pair(i, j));
+    }
+
+    //cout << g << endl;
+    double result_clique = 0;
+    benchmark b;
+    std::set<int> result;
+
+    max_clique_concurrent(g, result, b, 1);
+
+    result_clique = ((double) b.complete_time) / CLOCKS_PER_SEC;
+
+    
+    cout << "result: ";
+    for (std::set<int>::iterator it = result.begin(); it != result.end(); ++it) {
+        cout << *it << " ";
+    }
+    cout << endl;
+
+    cout << "Avg time: " << result_clique << endl 
+    << "Solution size: " << result.size() << endl 
+    << "Original Size: " << g.size() << endl 
+    << "Nodes explored: " << b.nodes << endl
+    << "Average Time / node: " << ((double) b.avg_clocks_node) / CLOCKS_PER_SEC << endl
+    << endl;
+
+    return std::make_tuple(result_clique, g.size());
+}
+
 std::tuple<double, double, double, int> run_test_random(int seed, bool define, int N) {
     if (!define)
         srand(time(NULL));
@@ -157,14 +233,9 @@ std::tuple<double, double, double, int> run_test_random(int seed, bool define, i
     digraph<int> p;
 
     for (int i = 0; i < N; i++) {
-        int v = (rand() % N);
-        int e = (rand() % N);
-        if (!p.has_node(v))
-            p.n_nodes++;
-        if (!p.has_node(e))
-            p.n_nodes++;
-        p.n_edges++;
-        p.add_edge(v, e);
+        for (int j = 0; j < N; j++) {
+            p.add_edge(i, j);
+        }
     }
 
     return run_test(p);
@@ -180,6 +251,7 @@ std::tuple<double, double, double, int> run_test_from_file(std::string filename)
     
     return run_test(p);
 }
+
 
 template <class B>
 std::tuple<double, double, double, int> run_test(digraph<B> &p) {

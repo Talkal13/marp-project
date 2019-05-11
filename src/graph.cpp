@@ -1,4 +1,4 @@
-#include "headers/graph.h"
+#include "../headers/graph.h"
 
 /**
  *
@@ -8,8 +8,9 @@
  * 
  */
 template<class T>
-void graph::add_node(T key) {
-    _map.insert(std::pair<T, std::vector<T>>(key, node));
+void graph<T>::add_node(T key) {
+    std::vector<T> edges;
+    _map.insert(std::pair<T, std::vector<T>>(key, edges));
 }
 
 /**
@@ -18,7 +19,7 @@ void graph::add_node(T key) {
  * 
  */
 template<class T>
-void graph::add_edge(std::pair<T,T> tuple) {
+void graph<T>::add_edge(std::pair<T,T> tuple) {
 
     // Add nodes to the map
     add_node(tuple.first);
@@ -30,3 +31,10 @@ void graph::add_edge(std::pair<T,T> tuple) {
         _map[tuple].insert(tuple.first);
 }
 
+
+template<class T>
+std::vector<T> graph<T>::operator[](T key) {
+    return _map.at(key);
+}
+
+template class graph<int>;
