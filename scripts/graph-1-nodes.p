@@ -7,6 +7,6 @@ set title "Grafica del archivo ".filename
 set xlabel "# Nodos"
 set ylabel "Tiempo (s)"
 set term png
-set output "../graphs/".filename.".png"
+set output "../graphs/".filename."-nodos.png"
 set datafile missing NaN
-plot    '../out/' . filename . '.dat' using 1:3 title 'Clique' with linespoints smooth unique, \
+plot    '../out/' . filename . '.dat' using 1:2 title 'Nodo' with linespoints smooth unique, \

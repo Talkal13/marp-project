@@ -2,9 +2,10 @@
 
 #include <vector>
 #include <queue>
-#include "../headers/node.h"
-#include "../headers/digraph.h"
 #include "../headers/graph.h"
+#include "../headers/sets.h"
+#include "../headers/dinamic_clique.h"
+
 
 typedef struct {
     int nodes = 0;
@@ -13,15 +14,26 @@ typedef struct {
 } benchmark;
 
 template <class T>
-std::set<T> operator -=(std::set<T> set1, std::set<T> set2) {
-    std::set<T> result;
-    for (T edge : set1) {
-        for (T edge2 : set2) {
-            if (edge == edge2) result.insert(edge);
-        }
+class node_u{
+    public:
+    std::set<T> C;
+    std::set<T> P;
+    int upper_bound = 0;
+    int lower_bound = 0;
+
+    node_u() {
+        
     }
-    return result;
-}
+
+    node_u(std::set<T> S, dinamic_clique<T> &d, const graph<T> &G, int (*opt)(std::set<T>, std::set<T>, graph<T>), int (*pes)(std::set<T>, std::set<T>, graph<T>)) {
+        C = S;
+        P = N(d, G, S);
+        upper_bound = (*opt)(C, P, G);
+        lower_bound = (*pes)(C, P, G);
+    }
+
+};
+
 
 /**
  * Precondition: G = (V, E) is undirected and represented as a Matrix
@@ -30,8 +42,8 @@ std::set<T> operator -=(std::set<T> set1, std::set<T> set2) {
  * Cost: O(|V| * (|V| - 1)) ~ O(N^2)
  */
 template <class T>
-bool is_solution(graph<T> G) {
-    return G.car_edges() == G.car_nodes() * (G.car_nodes() - 1) / 2;
+bool is_solution(dinamic_clique<T> &d, std::set<T> solution) {
+    return d.check_clique(solution);
 }
 
 template <class T>
@@ -40,25 +52,32 @@ bool is_empty(graph<T> G) {
 }
 
 template <class T>
-int estimated_cost(graph<T> G) {
-    return G.size();
+bool posible(dinamic_clique<T> &d, std::pair<std::set<T>, T> solution) {
+    return d.check_clique(solution);
 }
 
-
 template <class T>
-int pesimist_cost(graph<T> G) {
-    int cost = 0;
-    typename graph<T>::iterator it = G.begin();
-    for (; it != G.end(); ++it) {
-        cost += (*it).second.size(); // Add all the edges
+std::set<T> division_with_purge(std::set<T> S, std::set<T> C) {
+    T lower = *(C.begin());
+    std::set<T> result;
+    typename std::set<T>::iterator it = S.find(lower);
+    ++it;
+    for (; it != S.end(); ++it) {
+        if (C.find(*it) == C.end()) result.insert(*it);
     }
-    return (G.size() * (G.size() - 1) / 2) - cost;
+    return result;
 }
 
 template <class T>
-int pesimist_cost_heavy(graph<T> G) {
-    return G.independent().size();
+std::set<T> N(dinamic_clique<T> &d, graph<T> G, std::set<T> C) {
+    std::set<T> P;
+    for (T element : division_with_purge(G.V(), C)) {
+        if (posible(d, {C, element})) P.insert(element);
+    }
+    return P;
 }
+
+
 
 /**
  * Precondition Cyclid(G = (V,E))
@@ -67,90 +86,45 @@ int pesimist_cost_heavy(graph<T> G) {
  * 
  */
 
-template<class T>
-std::set<T> bnb_max_clique(graph<T> G) {
-    auto cmp = [](graph<T> left, graph<T> right) {return left.size() < right.size();}; //https://en.cppreference.com/w/cpp/container/priority_queue
-    std::priority_queue<graph<T>, std::vector<graph<T>>, decltype(cmp)> queue(cmp);
-    queue.push(G);
-    int best_cost = pesimist_cost(G);
-    while (!queue.empty()) { // No need to check for best cost because the top of the queue is always the best or equal that the sucesors
-        graph<T> candidate = queue.top(); queue.pop();
-        if (is_solution(candidate)) return candidate.V(); // No need to check other solutions -> Is going to be the best
-        typename graph<T>::iterator it = candidate.begin();
-        for (; it != candidate.end(); ++it) {
-            T K_i = (*it).first;
-            graph<T> K = candidate - K_i;
-            if (pesimist_cost(K) <= best_cost) {// Is always compleateable 
-                queue.push(K);
-                best_cost = pesimist_cost(K);
-            }
-        }
-    }
-    return std::set<T>();
-}
 
 template <class T>
-std::set<T> bnb_max_clique_benchmarks(graph<T> G, benchmark &marks) {
-    auto cmp = [](graph<T> left, graph<T> right) {return left.size() < right.size();}; //https://en.cppreference.com/w/cpp/container/priority_queue
-    std::priority_queue<graph<T>, std::vector<graph<T>>, decltype(cmp)> queue(cmp);
-    queue.push(G);
-    int best_cost = pesimist_cost(G);
+std::set<T> bnb_increment_max_clique_benchmarks(graph<T> G, benchmark &marks, int (*opt)(std::set<T>, std::set<T>, graph<T>), int (*pes)(std::set<T>, std::set<T>, graph<T>)) { //https://stackoverflow.com/questions/9410/how-do-you-pass-a-function-as-a-parameter-in-c
     
-    while (!queue.empty()) { // No need to check for best cost because the top of the queue is always the best or equal that the sucesors
-        clock_t clock_node = clock();
-        graph<T> candidate = queue.top(); queue.pop();
-        marks.nodes++;
-        if (is_solution(candidate)) {
-            marks.avg_clocks_node += (clock() - clock_node);
-            marks.avg_clocks_node /= marks.nodes;
-            return candidate.V(); // No need to check other solutions -> Is going to be the best
-        }
-        typename graph<T>::iterator it = candidate.begin();
-        for (; it != candidate.end(); ++it) {
-            T K_i = (*it).first;
-            graph<T> K = candidate - K_i;
-            if (pesimist_cost(K) <= best_cost) {// Is always compleateable 
-                queue.push(K);
-                best_cost = pesimist_cost(K);
-            }
-        }
-        marks.avg_clocks_node += (clock() - clock_node);
-    }
-    
-    return std::set<T>();
-}
+    dinamic_clique<T> d(G);
 
-template <class T>
-std::set<T> bnb_increment_max_clique_benchmarks(graph<T> G, benchmark &marks) {
+    auto cmp = [](node_u<T> left, node_u<T> right) {return left.lower_bound > right.lower_bound;}; //https://en.cppreference.com/w/cpp/container/priority_queue
     
-    auto cmp = [](graph<T> left, graph<T> right) {return left.size() < right.size();}; //https://en.cppreference.com/w/cpp/container/priority_queue
-    
-    std::priority_queue<graph<T>, std::vector<graph<T>>, decltype(cmp)> queue(cmp);
-    int best_cost = pesimist_cost_heavy(G);
+    std::priority_queue<node_u<T>, std::vector<node_u<T>>, decltype(cmp)> queue(cmp);
     
     for (std::pair<T, std::set<T>> element : G) {
-        graph<T> g;
-        g.add_node(element.first);
-        queue.push(g);
-        int best_cost = std::min(best_cost, pesimist_cost_heavy(g));
+        queue.push(node_u<T>(make_set(element.first), d, G, opt, pes));
+        
     }
-    graph<T> candidate = queue.top();
-    std::set<T> best_solution = candidate.V();
+    node_u<T> node;
+    if (!queue.empty()) node = queue.top();
+    std::set<T> best_solution = {};
+    int best_cost = 0;
     
-    while (!queue.empty()) {
+    while (!queue.empty() && node.upper_bound > best_cost) {
 
-        graph<T> candidate = queue.top(); queue.pop();
-        if (is_solution(candidate) ^ candidate.size() > best_solution.size()) {
-            
-            best_solution = candidate.V();
-        }
-        graph<T> option;
-        typename graph<T>::iterator it = candidate.begin();
-        std::set<T> edges = G.edges((*it).first);
-        for (; it != candidate.end(); ++it) {
-            edges -= (*it).second; 
-        }
+        node_u<T> parent = queue.top(); queue.pop();
+        marks.nodes++;
+        clock_t begin = clock();
+        for (T v : parent.P) {
+            node_u<T> node = node_u<T>(parent.C + v, d, G, opt, pes);
+            if (is_solution(d, node.C) && node.C.size() > best_cost) { 
+                best_solution = node.C;
+                best_cost = node.C.size();
+            }
 
+            if (node.upper_bound > best_cost) { // Is completable because every child in P is completable;
+                queue.push(node);
+                if (node.lower_bound > best_cost) 
+                    best_cost = node.lower_bound;
+            }
+        }
+        clock_t end = clock();
+        marks.avg_clocks_node += end - begin;
     }
     
     return best_solution;

@@ -3,6 +3,7 @@
 #include <vector>
 #include <map>
 #include <set>
+#include "../headers/sets.h"
 /**
  * 
  * Copyright Pablo Vazquez Gomis 2019
@@ -46,6 +47,15 @@ class graph {
             }
         }
 
+        graph(graph<T> G, std::set<T> subcomponents) {
+            _nodes = 0;
+            _edges = 0;
+            _V = subcomponents;
+            for (T v : subcomponents) {
+                add_edges(std::make_pair(v, G.edges(v) / subcomponents));
+            }
+        }
+
         ~graph(){
         }
 
@@ -82,6 +92,12 @@ class graph {
             }
         }
 
+        void add_edges(std::pair<T, std::set<T>> tuple) {
+            for (T element : tuple.second) {
+                add_edge(std::make_pair(tuple.first, element));
+            }
+        }
+
         /* Getters */
 
         int car_nodes() {
@@ -104,7 +120,7 @@ class graph {
             std::set<T> edges = _map.at(key);
             for (std::pair<T, std::set<T>> pair : _map) {
                 if (pair.first != key) {
-                    if (pair.second.find(key) != pair.second.end()) edges.insert(key);
+                    if (pair.second.find(key) != pair.second.end()) edges.insert(pair.first);
                 }
             }
             return edges;
@@ -113,11 +129,16 @@ class graph {
         std::set<T> edges(T key, graph<T> G_prime) {
             std::set<T> edges = _map.at(key);
             for (std::pair<T, std::set<T>> pair : _map) {
-                if (pair.first != key ^ G_prime.find(pair.first)) {
+                if (pair.first != key && G_prime.find(pair.first)) {
                     if (pair.second.find(key) != pair.second.end()) edges.insert(key);
                 }
             }
             return edges;
+        }
+
+        bool exist_edge(T v, T u) {
+            std::set<T> s = _map.at(v);
+            return s.find(u) != s.end();
         }
 
         std::set<T> V() {
@@ -146,11 +167,6 @@ class graph {
 
         std::set<T> operator[](T key) {
             return _map.at(key);
-        }
-
-        graph<T> operator=(const graph<T> &copy) {
-            graph<T> result(copy);
-            return result;
         }
 
         graph<T> operator-(T key) {
@@ -190,6 +206,5 @@ class graph {
             }
             return out;
         }
-
         
 };
