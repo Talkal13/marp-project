@@ -2,6 +2,8 @@
 \usepackage{mathtools}
 \usepackage{csquotes}
 \usepackage{graphicx}
+\usepackage{amsfonts}
+\usepackage{amsmath}
 \usepackage{listings}
 
 \DeclarePairedDelimiter\abs{\lvert}{\rvert}%
@@ -11,123 +13,100 @@
 	}
 
 \date{\today}
-
 \begin{document}
 
 \maketitle
 
 
 \begin{abstract}
-Practica opcional del primer cuatrimestre para la asignatura de Métodos Algorítmicos de Resolución de Problemas.
+Practica opcional del segundo cuatrimestre para la asignatura de Métodos Algorítmicos de Resolución de Problemas.
 \end{abstract}
 
 \section{Introducción}
 \subsection{Descripción de la práctica}
-Implementar o Java o en C++ un algoritmo, que dado un grafo dirigido, detecte si tiene o no
-ciclos. En caso de ser acíclico, ha de listar sus vértices en orden topológico. Si hay más de uno
-posible, los puede listar en cualquiera de ellos. En caso de ser cíclico, ha de listar sus componentes
-fuertemente conexas (cada una es un conjunto de vértices). El algoritmo para esta segunda parte
-puede verse en el Capítulo 22 del Cormen (2001, segunda edición).
-
+\paragraph{Programar el problema de encontrar el clique de tamaño máximo en un grafo no dirigido} 
+Dado un grafo $G = (V, E)$, un clique es un conjunto $C \subseteq V$ tal que $\forall u, v \in C, \exists (u, v) \in E$.
+\paragraph{}El problema consiste en encontrar el clique de tamaño maximo en $G$, para ello diferentes estrategias pueden ser utilizadas.
+La más común es utilizar la técnica de ramificacion y poda. Este problema a sido estudiado por varios investigadores a lo largo de los años.
+\paragraph{}En 1990 Carraghan y Pardalos \cite{car} asentaron las bases sobre las que otros investigadoes han ido construyendo. Especialmente introdujeron el concepto del
+set $P(C) \subseteq V$, cuya definición informal se reduce a el conjunto de vertices que pueden formar cliqué con $C$ aunque no garantiza $C + P(C)$ sea un clique. 
+Es decir $\forall v \in P(C) : C + v$ es cliqué.
+\paragraph{} Las estrategias posteriores, en general, tratan de acercar lo maximo posible a la solucion el set $P(V)$ para mejorar la poda.
+Una aproximación comun es utilizar el coloreado de grafos para mejorar el upper bound como hacen Tomita y Seki \cite{tom} o J. Konc, D. Janežič \cite{jonc}. 
 \subsection{Implementación}
 
-La práctica se puede dividir en 3 partes diferenciales:
-\begin{enumerate}
-\item \label{1} Comprobar si un grafo es cíclico o no
-\item \label{2} los vértices en orden topológico
-\item Listar los componentes fuertemente conexos 
-\end{enumerate}
+\paragraph{Grafo} El grafo se ha implementado mediante listas de adjacencia ordenadas, para evitar duplicar la información (dado que $(u, v) = (v, u)$ $\forall u, v \in V$)
+solo contiene la arista el vertice menor.
 
-\paragraph{}Dado que en al ordenar los vértices de el punto 2 uno de los casos base devuelve error si el
-grafo es cíclico y su complejidad esta en orden $ O(\abs{V} + \abs{E}) $ utilizaremos esa función para comprobar el punto 1.
-
-\paragraph{}En caso positivo, habremos encontrado una solución al punto 1 en orden $ O(\abs{V} + \abs{E}) $. En caso negativo, tendremos la solución al punto 2
-en el mismo orden.
-
-\paragraph{}Para resolver el punto 3 utilizamos el algoritmo de Tarjan\cite{tarjan} para encontrar componentes fuertemente conexas,
-el cual resuelve el problema utilizando \textit{Depth First Search (DFS)} con una complejidad de $ O(\abs{V} + \abs{E}) $.
-
-\section{Ordenación topológica}
-\paragraph{Definición:}Usando la definición propuesta por A. B. Kahn\cite{kahn}:
-\begin{displayquote}
-A list in topological order is such that no element appears in it until after all elements appearing on all paths leading to the particular element have been listed. 
-\end{displayquote}
-En otras palabras, dado que es necesario que el grafo sea acíclico para poder ordenarlo topológicamente, el raíz del grafo sera el primer elemento de la lista ordenada
-y los elementos siguientes serán la ordenación topológica de sus hijos.
-\paragraph{Implementación:} Usando DFS, podemos recorrer la lista desde una raíz del grafo cualquiera hasta el final de un camino,
-Continuando esta estrategia, la lista se compondrá recursivamente:
-\[ vertice + dfsTopologicalSort(e) \mid \forall e \in node.edges \] 
-Esto se consigue, añadiendo el nodo a la lista en primera posición cuando todas su aristas han sido visitadas.
-\section{Componentes fuertemente conexos}
-\paragraph{Definición:} Dado un grafo dirigido G, supongamos que para cada par de vértices v,w
-existe los caminos: $p_1: v \Rightarrow w$ y $p_2: w \Rightarrow v$, entonces G es fuertemente conexo.
-\paragraph{Implementación:} El problema lo resolveremos con el algoritmo propuesto por Robert E. Tarjan\cite{tarjan}, el cual se basa en estos puntos:
-\begin{enumerate}
-	\item Usando \textit{DFS} busca por todos los nodos siguiendo los caminos del grafo, asignando un indice y un \textbf{lowpoint-index} único a cada uno la primera vez que se visita el nodo.
-	\item El \textbf{lowpoint-index} representa el índice del nodo mas bajo al que se puede llegar siguiendo los caminos desde el nodo inicial y se va actualizando en el backtranking de
-\textit{DFS}.
-	\item Cuando el siguiendo un camino, se llega a el nodo inicial, todos los nodos que tengan el mismo \textbf{lowpoint-index} son nodos pertenecientes a el componente fuertemente conexos
-	\item Para evitar que el algoritmo dependa de el nodo inicial, que se elige aleatoriamente, se lleva la cuenta de los nodos recorridos con un stack. A la hora de recuperar componentes fuertemente conexas,
-solo los nodos que están en el stack pertenecen a él.
-\end{enumerate}
-\section{Ejecuciones Sencillas}
-\begin{lstlisting}[caption=resources/graph1.txt, frame=shadowbox]
-	Cycle number 0
-	0
-	Cycle number 1
-	4
-	Cycle number 2
-	3 -> 1 -> 2
-	Time to complete tarjan: 0.027
-	Time to complete cycles search: 0
-\end{lstlisting}
-
-\begin{lstlisting}[caption=resources/graph2.txt, frame=shadowbox]
-	1 - 2 - 3 - 4 - 5 - 6
-	Time to complete topological sort: 0.039
-	Time to complete cycles search: 0.009
-\end{lstlisting}
-
-\begin{lstlisting}[caption=resources/graph3.txt, frame=shadowbox]
-	Cycle number 0
-	0 -> 1 -> 2
-	Cycle number 1
-	6 -> 4 -> 5
-	Cycle number 2
-	7 -> 3
-	Time to complete tarjan: 0.187
-	Time to complete cycles search: 0.012
-\end{lstlisting}
-\section{Gráficas}\label{graphs}
-Todas las gráficas se encuentran en el apéndice de este documento.
-\subsection{Observaciones}
-Como se puede observar en las gráficas, el algoritmo de Tarjan\cite{tarjan} crece de forma mas rápida
-el algoritmo de para ordenar topológicamente la lista, esto aparenta ser debido a el coste acumulado de las operaciones sobre vectores y listas.
-\paragraph{}Esta conclusión es inferida de la comparación entre la búsqueda en de ciclos y la ordenación topológica. Ambos hacen esencialmente la misma búsqueda en profundidad, salvo por una pequeña operación de almacenaje en el stack
-pero sin embargo, como podemos observar en la figura uno, la búsqueda topológica crece de manera mas veloz que el algoritmo de búsqueda.
-\paragraph{}Con el algoritmo de Tarjan\cite{tarjan} ocurre exactamente lo mismo pero aumentado dado que además de mantener el stack de llamadas, hemos de ir añadiendo a la lista de componentes.
-\paragraph{Conclusión} Aunque las operaciones con las estructuras de datos no añaden a la complejidad del algoritmo, si que se ven reflejadas en los tiempos de ejecución.
+Debido a esta implementación el grafo necesita utilizar una lista ordenada, dado que los primeros vertices contienen mas informacion que los últimos.
+\section{El algoritmo}
+El algoritmo usado es el de ramificacion y poda visto en clase, con una cola de prioridad para explorar los nodos del arbol más prometedores, un test de factibilidad y dos cotas una optimista y otra pesimista para poder podar el arbol.
+\subsection{El arbol}
+El arbol calcula todas las posibilidades, es decir toda la combinación de nodos $\mathbb{P}(V)$ de menor a mayor tamaño, es decir, en el primer nivel calculamos los sets $C = \{v\}$ $\forall v \in V$. 
+En cada nivel generamos los hijos de cada nodo mediante el set $P(V)$ el cual nos garantiza que todos los hijos son solución al problema. 
+\paragraph{} Debido a que solo el nodo menor contiene la arista en su lista de adjacencia, se garantiza que ningún set esta repetido en otras ramas.
+\subsection{Test de factibilidad}
+El test de factibilidad es sencillo, con comprobar que C es solución basta, dado que si C es solucion cualquier $C^\prime \subseteq C$ es solución.
+\paragraph{} Para comprobar que un set es solución solo tenemos que hacer una sencilla operación matematica 
+\[ \abs{E^\prime} = \dfrac{\abs{C} * (\abs{C} - 1)}{2} \]
+\subsection{Cotas}
+\subsubsection{Simple}
+\paragraph{Optimista.} La cota optimista simple es sencilla de ver utilizando la notación de Carraghan y Pardalos, dado que para cualquier posible solución $C$ optimisticamente todos los elementos en $P(V)$ formaran la solución final. Es decir:
+\[ \text{cota-optimista}(C) = \abs{C} + \abs{P(C)} \]
+\paragraph{Pesimista.} En este problema es imposible comprobar si explorar los nodos de $P(V)$ si pueden o no formar parte del cliqué maximo por lo que la cota pesimista ha de ser
+\[ \text{cota-pesimista}(C) = \abs{C} \]
+\subsubsection{Compleja}
+\paragraph{Optimista.} La cota optimista compleja se aprovecha de la tecnica del coloreado de vertices presentada por Tomita y Seki \cite{tom} de forma simplificada, damos a un color diferente a todos aquellos vertices $u, v \in P(C)$ tal que $(u, v) \in E^\prime$.
+Podemos utilizar esto para delimitar mejor la cota optimista de la siguiente forma:
+\[ \text{cota-optimista}(C) = \abs{C} + S\]
+Donde $S$ es el numero de colores diferentes.
+\paragraph{Pesimista.} La cota pesimista sigue siendo igual que en la Simple por la misma razón.  
+\section{Resultados Experimentales}
+\subsection{Grafos Aleatorios}
+Todas las mediciones se han obtenido aleatoriamente con una semilla "-s 1" para poder replicar los resultados
+\newline\newline
+\hspace*{-4.2cm}
+	\begin{tabular}{| c | c | c c c| c c c | c c c |}
+		\hline
+		Tamaño & Densidad & Sin Poda & Nodos & Sec/Nodo & Poda Simple & Nodos & Sec/Nodo & Poda Compleja & Nodos & Sec/Nodo \\
+		\hline\hline
+		10 & 0.1 & 0.0027 & 11 & 0.0001 & 0.0028 & 2 & 0.0006 & 0.0019 & 1 & 0.0004 \\
+		\hline
+		10 & 0.3 & 0.0927 & 102 & 0.0007 & 0.0462 & 13 & 0.0031 & 0.0334 & 7 & 0.0040 \\
+		\hline
+		10 & 0.5 & 0.3108 & 795 & 0.0003 & 0.0968 & 39 & 0.0022 & 0.0282 & 17 & 0.0014 \\
+		\hline
+		10 & 0.7 & 65.574 & 139373 & 0.0003 & 3.4457 & 1958 & 0.0016 & 0.0808 & 35 & 0.0021 \\
+		\hline
+		10 & 0.9 & 123.5 & 235274 & 0.0004 & 18.874 & 13701 & 0.0012 & 0.1055 & 36 & 0.0026 \\
+		\hline
+		\hline
+		20 & 0.1 & 0.0529 & 61 & 0.0006 & 0.0409 & 7 & 0.0036 & 0.0303 & 4 & 0.0037 \\
+		\hline
+		20 & 0.3 & 2.0066 & 2269 & 0.0008 & 0.5331 & 127 & 0.0040 & 0.1804 & 21 & 0.0073 \\
+		\hline
+		20 & 0.5 & - & - & - & - & - & - & 18.679 & 1779 & 0.0103 \\
+		\hline
+		\hline
+		50 & 0.1 & 0.7174 & 536 & 0.0011 & 0.4065 & 57 & 0.0055 & 0.1860 & 12 & 0.0079 \\
+		\hline
+		50 & 0.3 & - & - & - & 152.62 & 7612 & 0.0199 & 5.6021 & 187 & 0.0290 \\
+		\hline \hline
+		100 & 0.1 & 17.0103 & 4691 & 0.0035 & 7.3379 & 349 & 0.0202 & 1.0722 & 16 & 0.0519 \\
+		\hline
+		100 & 0.2 & - & - & - & - & - & - & 14.185 & 175 & 0.0787 \\
+		\hline
+	\end{tabular}
+\hspace*{-4.2cm}
+\section{Conclusión}
+Es evidente la progresión exponencial del algoritmo, aun asi la aplicacion de cotas aun más costosas por nodo limita el numero de nodos y permite solucionar grafos más grandes y densos.
+\paragraph{} El problema del cliqué es un problema estudiado en profundidaz como cualquier otro problema NP-Completo. Aun habiendo echo grandes avances en el campo que permiten en un tiempo mas o menos razonable gestionar grafos con muchas aristas, aun queda espacio por recorrer dado que la curva exponencial de su complejidad sigue limitando la resolución del problema incluso para ordenadores modernos.
 \begin{thebibliography}{9}
-\bibitem{tarjan} Robert E. Tarjan. \textit{Depth-First Search and Linear Graph Algorithms}.
-Stanford University. Stanford, California.
-\bibitem{kahn} A. B. Kahn. \textit{Topological sorting of large networks}. Westinghouse Electric Corporation, Baltimore, Maryland
+\bibitem{car} Carraghan, R. \& Pardalos, P.M. (1990). \textit{An exact algorithm for the maximum clique problem.} Operations Research Letters, 9(6), 375–382.
+\bibitem{tom} E. Tomita, T. Seki, \textit{An efficient branch-and-bound algorithm for finding
+a maximum clique}, Lecture Notes in Computer Science 2631 (2003) 278-
+289.
+\bibitem{jonc} J. Konc \& D. Janežič, D. (2007). \textit{An improved branch and bound algorithm for the maximum clique problem.} MATCH - Communications in Mathematicaland in Computer Chemistry, 58, 569-590.
 \end{thebibliography}
-\section{Apendice}
 \appendix
-\begin{figure}[h!]
-	\centering
-	  	\includegraphics[width=\linewidth, height=0.40\textheight]{../graphs/graph-dac-1}
-	\label{fig-dac-1}
-\end{figure}
-\paragraph{} 
-\begin{figure}[h!]
-	\centering
-		  \includegraphics[width=\linewidth, height=0.40\textheight]{../graphs/graph-rand-5}
-	\label{fig-rand-5}
-\end{figure}
-\begin{figure}[h!]
-	\centering
-	  	\includegraphics[width=\linewidth,height=0.40\textheight]{../graphs/graph-rand-6}
-	\label{fig-rand-6}
-\end{figure}
 \end{document} 

@@ -8,48 +8,45 @@
 #include <time.h>
 #include <unistd.h>
 #include "../headers/max_clique.h"
-#include <thread>         // http://www.cplusplus.com/reference/thread/thread/
 #include "../headers/bounds.h"
+#include "../headers/globals.h"
 
 
 using namespace std;
 
-
-int N_EDGES = 1000;
-int N_VERTICES = 100;
+benchmark marks;
+bounds<int> bound;
 
 bool parse(int args, char *argv[], std::string &filename, string &fileout, int &seed, bool &random);
 template <class A>
 void translate_dimacs(graph<A> &graph, std::string filename);
-std::tuple<double, double, int> run_test_from_file(std::string filename, int b);
-std::tuple<double, double, int> run_test_random(int seed, bool define, int N, int b);
-void write_to_file(std::string fileout, std::tuple<double, double, int> result);
+std::tuple<double, double, int, int> run_test_from_file(std::string filename, int b);
+std::tuple<double, double, int, int> run_test_random(int seed, float p, int N, int b);
+void write_to_file(std::string fileout, std::tuple<double, double, int, int> result);
 void print_help_message();
 template <class T>
-std::tuple<double, double, int> run_test(graph<T> g, int x);
+std::tuple<double, double, int, int> run_test(graph<T> g, int x, float p);
 
 int main(int argc, char *argv[]) {
     
-
     // Parse comand line arguments
     std::string filename;
     std::string fileout;
     bool random = true;
-    bool define = false;
     bool out = false;
     bool developer = false;
+    float p = 0.5;
     int bound = 0;
     int size = 1;
-    int seed = 0;
+    int seed = -1;
     int arg;
-    while ((arg = getopt(argc, argv, "hs:o:f:b:n:v:e:d")) != -1) {
+    while ((arg = getopt(argc, argv, "hs:o:f:b:n:p:d")) != -1) {
         switch (arg) {
             case 'h':
                 print_help_message();
                 return 1;
             case 's':
                 seed = stoi(optarg);
-                define = true;
                 break;
             case 'o':
                 fileout = optarg;
@@ -65,11 +62,8 @@ int main(int argc, char *argv[]) {
             case 'b':
                 bound = stoi(optarg);
                 break;
-            case 'v':
-                N_VERTICES = stoi(optarg);
-                break;
-            case 'e':
-                N_EDGES = stoi(optarg);
+            case 'p':
+                p = stof(optarg);
                 break;
             case 'd':
                 developer = true;
@@ -86,11 +80,19 @@ int main(int argc, char *argv[]) {
     }
 
     
-    std::tuple<double, double,  int> result;
+    std::tuple<double, double, int,  int> result;
+
+    if (developer) {
+        result = run_test_random(seed, p, size, bound);
+        if (out) {
+            write_to_file(fileout, result);
+        }
+        return 0;
+    }
         
     if (random) {
-        for (int i = 0; i < size; i++) {
-            result = run_test_random(seed, define, i, bound);
+        for (int i = 1; i <= size; i++) {
+            result = run_test_random(seed, p, i, bound);
             if (out) {
                 write_to_file(fileout, result);
             }
@@ -106,11 +108,11 @@ int main(int argc, char *argv[]) {
     
 }
 
-void write_to_file(std::string fileout, std::tuple<double, double, int> result) {
+void write_to_file(std::string fileout, std::tuple<double, double, int, int> result) {
     ofstream file;
     file.open(fileout, std::fstream::app);
     if (file.fail()) return;
-    file << get<2>(result) << "\t" << get<0>(result) << "\t" << get<1>(result) << endl;
+    file << get<2>(result) << "\t" << get<0>(result) << "\t" << get<1>(result) << '\t' <<  get<3>(result) << endl;
     file.close();
 }
 
@@ -121,11 +123,10 @@ void print_help_message() {
     cout << "-s <seed>\tsemilla para el generador aleatorio, por defecto es aleatoria" << endl;
     cout << "-f <filename>\tNombre del archivo con la grafica en formato DIMACS, al utilizar esta opcion, la opcion -s es ignorada" << endl;
     cout << "-o <filename>\tNombre del archivo de salida, donde se escriben los tiempos de salida" << endl;
-    cout << "-l <epoch>[default=100]\tNumero de interaciones por cada test.\tDefault: 100" << endl << endl;
     cout << "Random Options" << endl << endl;
-    cout << "-n <graphs>[default=1]\tNumero de grafos que se quieren generar, solo funciona con -s" << endl;
-    cout << "-v <vertices>[default=1000]\tRango maximo de nodos que ha de tener el grafo, esta entre [0, verices)" << endl;
-    cout << "-e <edges>[default=100]\tRango de edges que ha de tener el grafo, esta entre [edges / 2, edges)" << endl;
+    cout << "-n <graphs>[default=1]\tNumero de grafos que se quieren generar" << endl;
+    cout << "-d\tDeveloper option, solo genera un grafo de tamaño n[default=1]" << endl;
+    cout << "-p <density>[default=0.5]\tProbabilidad de que exista una arista entre dos vertices, valor entre 0-1" << endl;
     cout << endl;
 }
 
@@ -157,34 +158,46 @@ void translate_dimacs(graph<A> &graph, std::string filename) {
     file.close();
 }
 
+void clean_marks() {
+    marks.nodes = 0;
+    marks.avg_clocks_node = 0;
+    marks.complete_time = 0;
+}
 
 template <class T>
-std::tuple<double, double, int> run_test(graph<T> g, int x) {
+std::tuple<double, double, int, int> run_test(graph<T> g, int x, float p) {
 
-    //cout << g << endl;
     double result_clique = 0;
-    benchmark b;
+    clean_marks();
     std::set<T> result;
-
-    b.complete_time = clock();
+    
+    // Bound selection
     switch(x) {
         case 0:
-            result = bnb_increment_max_clique_benchmarks(g, b, optimistic_bound_0, pesimistic_bound_0);
+            bound.opt = optimistic_bound_0;
+            bound.pes = pesimistic_bound_0;
             break;
         case 1:
-            result = bnb_increment_max_clique_benchmarks(g, b, optimistic_bound_1, pesimistic_bound_1);
+            bound.opt = optimistic_bound_1;
+            bound.pes = pesimistic_bound_1;
             break;
         case 2:
-            result = bnb_increment_max_clique_benchmarks(g, b, optimistic_bound_2, pesimistic_bound_2);
+            bound.opt = optimistic_bound_2;
+            bound.pes = pesimistic_bound_2;
             break;
     }
-    
-    b.complete_time = clock() - b.complete_time;
 
-    result_clique = ((double) b.complete_time) / CLOCKS_PER_SEC;
-    double time_nodes = ((double) b.avg_clocks_node / (double) b.nodes) / CLOCKS_PER_SEC;
     
-    cout << "result: ";
+
+    // Execution of the program
+    marks.complete_time = clock();
+    result = bnb_max_clique_benchmarked(g);
+    marks.complete_time = clock() - marks.complete_time;
+
+    result_clique = ((double) marks.complete_time) / CLOCKS_PER_SEC;
+    double time_nodes = ((double) marks.avg_clocks_node / (double) marks.nodes) / CLOCKS_PER_SEC;
+    
+    cout << "Result: ";
     for (typename std::set<T>::iterator it = result.begin(); it != result.end(); ++it) {
         cout << *it << " ";
     }
@@ -193,37 +206,38 @@ std::tuple<double, double, int> run_test(graph<T> g, int x) {
     cout << "Avg time: " << result_clique << endl 
     << "Solution size: " << result.size() << endl 
     << "Original Size: " << g.size() << endl 
-    << "Nodes explored: " << b.nodes << endl
-    << "Average Time / node: " << time_nodes << endl
-    << endl;
+    << "Nodes explored: " << marks.nodes << endl
+    << "Average Time / node: " << time_nodes << endl;
+    if (p != -1.0) cout << "Density: " << p << endl;
+    cout << endl;
 
-    return std::make_tuple(result_clique, b.time_nodes, g.size());
+    return std::make_tuple(result_clique, time_nodes, g.size(), marks.nodes);
 }
 
-std::tuple<double, double, int> run_test_random(int seed, bool define, int N, int b) {
-    if (!define)
+std::tuple<double, double, int, int> run_test_random(int seed, float p, int N, int b) {
+    if (seed == -1)
         srand(time(NULL));
     else
         srand(seed);
 
-    graph<int> p;
+    graph<int> graph;
 
     for (int i = 1; i <= N; i++) {
         for (int j = 1; j <= N; j++) {
-            if (i % j == 0) p.add_edge(std::make_pair(i, j));
+            if (rand() % 100 < p * 100) graph.add_edge({i, j});
         }
     }
 
-    return run_test(p, b);
+    return run_test(graph, b, p);
 
 }
 
-std::tuple<double, double, int> run_test_from_file(std::string filename, int b) {
+std::tuple<double, double, int,  int> run_test_from_file(std::string filename, int b) {
 
     // Translate from dimacs convention to graph
     graph<int> p;
     translate_dimacs(p, filename);
 
     
-    return run_test(p, b);
+    return run_test(p, b, -1.0);
 }

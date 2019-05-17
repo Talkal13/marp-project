@@ -3,6 +3,12 @@
 #include <set>
 #include <algorithm>
 
+/**
+ * 
+ * Helper sets operations
+ * 
+ */
+
 template <class T>
 std::set<T> operator /(std::set<T> set1, std::set<T> set2) {
     std::set<T> result;
@@ -19,6 +25,13 @@ std::set<T> operator -(std::set<T> original, std::set<T> operand) {
     for (T edge : original) {
         if (operand.find(edge) == operand.end()) result.insert(edge);
     }
+    return result;
+}
+
+template <class T>
+std::set<T> operator -(std::set<T> s, T element) {
+    std::set<T> result = s;
+    result.extract(element);
     return result;
 }
 

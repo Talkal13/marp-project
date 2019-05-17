@@ -6,10 +6,10 @@
 #include "../headers/sets.h"
 /**
  * 
- * Copyright Pablo Vazquez Gomis 2019
+ * Undirected Graph
  * 
- * 
- * 
+ * Only the min node handles the edge;
+ * O(log n) search
  * 
  * 
  */ 
@@ -22,7 +22,6 @@ class graph {
         int _nodes;
         int _edges;
         std::set<T> _V;
-        std::set<T> _independent;
     public: 
 
     
@@ -47,12 +46,12 @@ class graph {
             }
         }
 
-        graph(graph<T> G, std::set<T> subcomponents) {
+        graph(const graph<T> &G, std::set<T> subcomponents) {
             _nodes = 0;
             _edges = 0;
             _V = subcomponents;
             for (T v : subcomponents) {
-                add_edges(std::make_pair(v, G.edges(v) / subcomponents));
+                add_edges(std::make_pair(v, G.s_edges(v) / subcomponents));
             }
         }
 
@@ -60,12 +59,11 @@ class graph {
         }
 
         void add_node(T key) {
-            std::set<T> edges = std::set<T>();
+            std::set<T> edges;
              
-            if (_map.insert(std::make_pair(key, edges)).second) { // https://en.cppreference.com/w/cpp/container/unordered_map/insert
+            if (_map.insert(std::make_pair(key, edges)).second) { 
                 _nodes++;
                 _V.insert(key);
-                _independent.insert(key);
             }
         }
 
@@ -88,11 +86,11 @@ class graph {
 
             if (inserted) {
                 _edges++;
-                _independent.erase(min);
             }
         }
 
         void add_edges(std::pair<T, std::set<T>> tuple) {
+            add_node(tuple.first);
             for (T element : tuple.second) {
                 add_edge(std::make_pair(tuple.first, element));
             }
@@ -100,15 +98,15 @@ class graph {
 
         /* Getters */
 
-        int car_nodes() {
+        int car_nodes() const {
             return _nodes;
         }
 
-        int car_edges() {
+        int car_edges() const {
             return _edges;
         }
 
-        int size() {
+        int size() const {
             return car_nodes();
         }
 
@@ -116,7 +114,7 @@ class graph {
             return _map.find(key) != _map.end();
         }
 
-        std::set<T> edges(T key) {
+        std::set<T> edges(T key) const {
             std::set<T> edges = _map.at(key);
             for (std::pair<T, std::set<T>> pair : _map) {
                 if (pair.first != key) {
@@ -124,6 +122,10 @@ class graph {
                 }
             }
             return edges;
+        }
+
+        std::set<T> s_edges(T key) const {
+            return _map.at(key);
         }
 
         std::set<T> edges(T key, graph<T> G_prime) {
@@ -141,13 +143,10 @@ class graph {
             return s.find(u) != s.end();
         }
 
-        std::set<T> V() {
+        std::set<T> V() const {
             return _V;
         }
 
-        std::set<T> independent() {
-            return _independent;
-        }
 
         /* Iterator */
 
@@ -162,6 +161,12 @@ class graph {
         inline const_iterator cbegin() const { return _map.cbegin(); }
 
         inline const_iterator cend() const { return _map.end(); }
+
+        typedef typename std::map<T, std::set<T>>::reverse_iterator reverse_iterator;
+
+        inline reverse_iterator rbegin() { return _map.rbegin();}
+
+        inline reverse_iterator rend() { return _map.rend();}
 
         /* Operators */
 

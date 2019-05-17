@@ -4,14 +4,10 @@
 #include <queue>
 #include "../headers/graph.h"
 #include "../headers/sets.h"
-#include "../headers/dinamic_clique.h"
+#include "../headers/structs.h"
+#include "../headers/globals.h"
 
 
-typedef struct {
-    int nodes = 0;
-    clock_t avg_clocks_node = 0;
-    clock_t complete_time = 0;
-} benchmark;
 
 template <class T>
 class node_u{
@@ -21,29 +17,27 @@ class node_u{
     int upper_bound = 0;
     int lower_bound = 0;
 
-    node_u() {
-        
-    }
+    node_u() {}
 
-    node_u(std::set<T> S, dinamic_clique<T> &d, const graph<T> &G, int (*opt)(std::set<T>, std::set<T>, graph<T>), int (*pes)(std::set<T>, std::set<T>, graph<T>)) {
+    node_u(std::set<T> S, graph<T>  g) {
         C = S;
-        P = N(d, G, S);
-        upper_bound = (*opt)(C, P, G);
-        lower_bound = (*pes)(C, P, G);
+        P = N(g, S);
+        upper_bound = (*bound.opt)(C, P, g);
+        lower_bound = (*bound.pes)(C, P, g);
     }
-
 };
 
 
-/**
- * Precondition: G = (V, E) is undirected and represented as a Matrix
- * 
- * 
- * Cost: O(|V| * (|V| - 1)) ~ O(N^2)
- */
+// Is solution if |E| = |V| * (|V| - 1) / 2
 template <class T>
-bool is_solution(dinamic_clique<T> &d, std::set<T> solution) {
-    return d.check_clique(solution);
+bool is_solution(std::set<T> solution, const graph<T> &g) {
+    graph<T> sub_g(g, solution);
+    return sub_g.car_edges() == sub_g.size() * (sub_g.size() - 1) / 2;
+}
+
+template <class T>
+bool is_solution(const graph<T> &g) {
+    return g.car_edges() == g.size() * (g.size() - 1) / 2;
 }
 
 template <class T>
@@ -52,8 +46,8 @@ bool is_empty(graph<T> G) {
 }
 
 template <class T>
-bool posible(dinamic_clique<T> &d, std::pair<std::set<T>, T> solution) {
-    return d.check_clique(solution);
+bool posible(std::set<T> solution, const graph<T> &g) {
+    return is_solution(solution, g);
 }
 
 template <class T>
@@ -69,10 +63,10 @@ std::set<T> division_with_purge(std::set<T> S, std::set<T> C) {
 }
 
 template <class T>
-std::set<T> N(dinamic_clique<T> &d, graph<T> G, std::set<T> C) {
+std::set<T> N(graph<T> G, std::set<T> C) {
     std::set<T> P;
     for (T element : division_with_purge(G.V(), C)) {
-        if (posible(d, {C, element})) P.insert(element);
+        if (posible(C + element, G)) P.insert(element);
     }
     return P;
 }
@@ -88,36 +82,38 @@ std::set<T> N(dinamic_clique<T> &d, graph<T> G, std::set<T> C) {
 
 
 template <class T>
-std::set<T> bnb_increment_max_clique_benchmarks(graph<T> G, benchmark &marks, int (*opt)(std::set<T>, std::set<T>, graph<T>), int (*pes)(std::set<T>, std::set<T>, graph<T>)) { //https://stackoverflow.com/questions/9410/how-do-you-pass-a-function-as-a-parameter-in-c
-    
-    dinamic_clique<T> d(G);
+std::set<T> bnb_max_clique_benchmarked(graph<T> G) {
 
-    auto cmp = [](node_u<T> left, node_u<T> right) {return left.lower_bound > right.lower_bound;}; //https://en.cppreference.com/w/cpp/container/priority_queue
+    auto cmp = [](node_u<T> left, node_u<T> right) {return left.upper_bound < right.upper_bound;}; // Lambda function for comparations
     
     std::priority_queue<node_u<T>, std::vector<node_u<T>>, decltype(cmp)> queue(cmp);
+
+    if (is_solution(G)) return G.V(); // If is solution return the whole graph
     
     for (std::pair<T, std::set<T>> element : G) {
-        queue.push(node_u<T>(make_set(element.first), d, G, opt, pes));
-        
+        queue.push(node_u<T>(make_set(element.first), G)); // Push the first candidates of the tree - the unitary sets
     }
-    node_u<T> node;
-    if (!queue.empty()) node = queue.top();
+    node_u<T> parent;
     std::set<T> best_solution = {};
-    int best_cost = 0;
+    int best_cost = -1;
     
-    while (!queue.empty() && node.upper_bound > best_cost) {
+    while (!queue.empty() && parent.upper_bound > best_cost) {
 
-        node_u<T> parent = queue.top(); queue.pop();
-        marks.nodes++;
-        clock_t begin = clock();
-        for (T v : parent.P) {
-            node_u<T> node = node_u<T>(parent.C + v, d, G, opt, pes);
-            if (is_solution(d, node.C) && node.C.size() > best_cost) { 
-                best_solution = node.C;
+        parent = queue.top(); queue.pop(); // Parent is the best candidate available
+        if (is_solution(parent.C, G) && (int) parent.C.size() > best_cost) { //If is a better solution replace it.
+                best_solution = parent.C;
+                best_cost = parent.C.size(); 
+        }
+        marks.nodes++; // bechmark nodes
+        clock_t begin = clock(); // start
+        for (T v : parent.P) { // For every vertex in the set of posibles
+            node_u<T> node = node_u<T>(parent.C + v, G);
+            if (is_solution(node.C, G) && (int) node.C.size() > best_cost) { 
+                best_solution = node.C; //If is solution replace
                 best_cost = node.C.size();
             }
 
-            if (node.upper_bound > best_cost) { // Is completable because every child in P is completable;
+            if (node.upper_bound > best_cost) { // Is completable because every child in P is completable and is a plausible candidate
                 queue.push(node);
                 if (node.lower_bound > best_cost) 
                     best_cost = node.lower_bound;
@@ -126,6 +122,5 @@ std::set<T> bnb_increment_max_clique_benchmarks(graph<T> G, benchmark &marks, in
         clock_t end = clock();
         marks.avg_clocks_node += end - begin;
     }
-    
     return best_solution;
 }

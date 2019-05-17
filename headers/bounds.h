@@ -1,11 +1,15 @@
 
-
+#pragma once
 #include <set>
+#include "../headers/structs.h"
+#include "../headers/globals.h"
+#include "../headers/sets.h"
+#include "../headers/paint.h"
 
 /**
  * 
  * Bounds: level 0
- * 
+ * No bounds - the optimistic is always the bigger posible and the pesimistic is always 0
  * 
  */
 
@@ -23,6 +27,8 @@ int pesimistic_bound_0(std::set<T> C, std::set<T> P, graph<T> g) {
  * 
  * Bounds: level 1
  * 
+ * Simple bound
+ * Optimistic: Assumes all candidates of P are part of the solution
  * 
  */
 
@@ -39,27 +45,17 @@ int pesimistic_bound_1(std::set<T> C, std::set<T> P, graph<T> g) {
 /**
  * 
  * Bounds level 2
- * 
- * 
- * 
+ * Complex bound
+ * Optimistic: Paints the nodes os P so Clique size must be at most the number of color classes;
+ *  
  */
+
 template <class T>
 int optimistic_bound_2(std::set<T> C, std::set<T> P, graph<T> g) {
-    return C.size() + P.size();
+    return C.size() + paint_nodes<T>(graph<T>(g, P)).get_colors();
 }
 
 template <class T>
 int pesimistic_bound_2(std::set<T> C, std::set<T> P, graph<T> g) {
-    int solution = C.size();
-    bool clique = true;
-    for (T e : P) {
-        for (T k : P) {
-            if (!g.exist_edge(e, k)) clique = false;
-        }
-        if (clique) {
-            solution++;
-            clique = true;
-        }
-    }
-    return solution;
+    return C.size();
 }

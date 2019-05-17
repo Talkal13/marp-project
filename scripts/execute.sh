@@ -1,8 +1,7 @@
 if [[ -d $1 ]]; then
     for graph in $1/*; do
-        echo $graph
-        ../bin/pracmarp -f $graph -o ../out/$2.dat
+        echo $graph >> ../out/$2
+        timeout 400s ../bin/pracmarp -f $graph -o ../out/$2 -b 2
     done
-    gnuplot -e "filename='$2'" graph-1.p 
 fi
 
