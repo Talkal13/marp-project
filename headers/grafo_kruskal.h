@@ -3,9 +3,10 @@
 #include "arista.h"
 #include "comparador.h"
 #include <vector>
+#include "particion.h"
 
-template <class V>
-using arista_grafo = arista<unsigned int, V>;
+template <class T, class V>
+using set_ordenado_aristas = std::set<arista<T, V>, comparador_aristas<arista<T, V>>>;
 
 
 /**
@@ -22,36 +23,33 @@ class grafo_kruskal {
 
         grafo_kruskal() {}
 
-        std::vector<arista<T, V>> kruskal() {
-            std::vector<arista<T, V>> solucion;
-            int con = 0;
-            bool marca[_n] = {false};
-            for (auto it = _aristas.begin(); it != _aristas.end(); ++it) {
-                unsigned int v1 = it->vertices.first;
-                unsigned int v2 = it->vertices.second;
-                if (!marca[v1] && !marca[v2]) {
-                    marca[v1] = true;
-                    marca[v2] = true;
-                    arista<T, V> a;
-                    a.vertices = std::make_pair(_vn[v1], _vn[v2]);
-                    a.valor = it->valor;
-                    solucion.push_back(a);
-                }
-                if (solucion.size() == _n) return solucion;
+        std::vector<arista<T, V>> kruskal_A() {
+            std::vector<arista<T, V>> sol;
+            particion<T> _par;
+            for (auto it = _vertices.begin(); it != _vertices.end(); ++it) {
+                _par.incluir_elemento(*it);
             }
-            return solucion;
+            auto it = _aristas.begin();
+            while (sol.size() < _vertices.size() - 1) {
+                std::pair<T, T> a = (*it).vertices;
+                T rep_a = _par.encontrar_set(a.first);
+                T rep_b = _par.encontrar_set(a.second);
+                if (rep_a != rep_b) {
+                    _par.unir_set(rep_a, rep_b);
+                    sol.push_back(*it);
+                }
+                ++it;
+            }
+            return sol;
         }
 
         bool insertar_arista(arista<T, V> arista) {
-            arista_grafo<V> a;
+            _vertices.insert(arista.vertices.first);
+            _vertices.insert(arista.vertices.second);
 
-            a.vertices = traducir_nv(arista.vertices);
-            a.valor = arista.valor;
-
-            _aristas.insert(a);
+            _aristas.insert(arista);
 
             return true;
-
         }
 
         friend std::ostream& operator<<(std::ostream& out, const grafo_kruskal& gk) {
@@ -60,8 +58,8 @@ class grafo_kruskal {
                 out << *it << " ";
             }
             out << std::endl << "Vertices: " << std::endl;
-            for (unsigned int i = 0; i < gk._n; i++) {
-                out << (gk._vn.at(i)) << std::endl;
+            for (auto it_v = gk._vertices.begin(); it_v != gk._vertices.end(); ++it_v) {
+                out << *it_v << std::endl;
             }
             out << std::endl;
             return out;
@@ -70,32 +68,7 @@ class grafo_kruskal {
 
 
     private:
-        std::set<arista_grafo<V>, comparador_aristas<arista_grafo<V>>> _aristas;
-        std::unordered_map<unsigned int, T> _vn; // Vertice a nodo
-        std::unordered_map<T, unsigned int> _nv; // Nodo a vertice
-        unsigned int _n = 0; // Contador de vertices
-
-
-
-        std::pair<unsigned int, unsigned int> traducir_nv(std::pair<T, T> nodos) {
-            unsigned int v1, v2;
-            v1 = encuentra_y_asigna_nv(nodos.first);
-            v2 = encuentra_y_asigna_nv(nodos.second);
-
-            return std::make_pair(std::min(v1,v2), std::max(v1, v2));
-        }
-
-        unsigned int encuentra_y_asigna_nv(T nodo) {
-            unsigned int v;
-            if (_nv.find(nodo) == _nv.end()) {
-                _nv.insert({nodo, _n});
-                _vn.insert({_n, nodo});
-                v = _n;
-                _n++;
-            } else {
-                v = _nv.at(nodo);
-            }
-            return v;
-        }
+        set_ordenado_aristas<T, V> _aristas;
+        std::set<T> _vertices;
 
 };

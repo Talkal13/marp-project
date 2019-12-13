@@ -141,7 +141,7 @@ void run_test_random(int seed, float p, int N, unsigned int min, unsigned int ma
     }
     if (verbose) {
         cout << grafo << endl;
-        std::vector<arista<int, unsigned int>> kruskal = grafo.kruskal();
+        std::vector<arista<int, unsigned int>> kruskal = grafo.kruskal_A();
         for (auto it = kruskal.begin(); it != kruskal.end(); ++it) {
             cout << *it << " ";
         }
