@@ -1,4 +1,4 @@
-
+#pragma once 
 #include <unordered_map>
 
 template <class T>
@@ -12,8 +12,11 @@ template <class T>
 class particion {
     public:
 
-    particion() {}
+    particion() {
+        _representantes = 0;
+    }
     particion(T x) {
+        _representantes = 0;
         incluir_elemento(x);
     }
 
@@ -28,6 +31,7 @@ class particion {
         nodo->p = nodo;
         nodo->rango = 0;
         _nodos.insert({x, nodo});
+        ++_representantes;
         return true;
     }
 
@@ -45,6 +49,7 @@ class particion {
     }
 
     bool juntar(T a, T b) {
+        if (a == b) return false;
         nodo_particion<T> *x = _nodos.at(a);
         nodo_particion<T> *y = _nodos.at(b);
         if (x->rango > y->rango) {
@@ -54,12 +59,18 @@ class particion {
             x->p = y;
             if (x->rango == y->rango) y->rango = y->rango + 1;
         }
+        --_representantes;
         return true;
+    }
+
+    unsigned int representantes() {
+        return _representantes;
     }
 
     private:
 
     std::unordered_map<T, nodo_particion<T>*> _nodos;
+    unsigned int _representantes;
 
 };
 

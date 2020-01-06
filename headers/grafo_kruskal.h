@@ -1,3 +1,5 @@
+#pragma once
+
 #include <set>
 #include <unordered_map>
 #include "arista.h"
@@ -23,14 +25,17 @@ class grafo_kruskal {
 
         grafo_kruskal() {}
 
+
+        // this tiene que ser conexo
         std::vector<arista<T, V>> kruskal_A() {
             std::vector<arista<T, V>> sol;
+
             particion<T> _par;
             for (auto it = _vertices.begin(); it != _vertices.end(); ++it) {
                 _par.incluir_elemento(*it);
             }
             auto it = _aristas.begin();
-            while (sol.size() < _vertices.size() - 1) {
+            while ((int) sol.size() < ((int) _vertices.size()) - 1) {
                 std::pair<T, T> a = (*it).vertices;
                 T rep_a = _par.encontrar_set(a.first);
                 T rep_b = _par.encontrar_set(a.second);
@@ -42,6 +47,7 @@ class grafo_kruskal {
             }
             return sol;
         }
+
 
         bool insertar_arista(arista<T, V> arista) {
             _vertices.insert(arista.vertices.first);
@@ -57,11 +63,10 @@ class grafo_kruskal {
             for (auto it = gk._aristas.begin(); it != gk._aristas.end(); ++it) {
                 out << *it << " ";
             }
-            out << std::endl << "Vertices: " << std::endl;
+            out << std::endl << "Vertices: ";
             for (auto it_v = gk._vertices.begin(); it_v != gk._vertices.end(); ++it_v) {
-                out << *it_v << std::endl;
+                out << *it_v << " ";
             }
-            out << std::endl;
             return out;
         }
 
