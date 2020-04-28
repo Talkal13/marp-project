@@ -9,4 +9,4 @@ set ylabel "Tiempo (s)"
 set term png
 set output "../graphs/".filename.".png"
 set datafile missing NaN
-plot    '../out/' . filename . '.dat' using 1:2 title 'Kruskal' with linespoints smooth unique, \
+plot    '../out/' . filename . '.dat' using 1:2 title 'Clique' with linespoints smooth unique, \

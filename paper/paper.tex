@@ -19,58 +19,89 @@
 
 
 \begin{abstract}
-Practica opcional del primer cuatrimestre para la asignatura de Métodos Algorítmicos de Resolución de Problemas.
+Practica opcional del segundo cuatrimestre para la asignatura de Métodos Algorítmicos de Resolución de Problemas.
 \end{abstract}
 
 \section{Introducción}
-\subsection{Definicion}
-Implementar o Java o en C++ el algoritmo de Kruskal junto con una estructura de partición con compresión de caminos.
-\subsection{Descripción del Algorítmo de Kruskal} \label{sec:algo}
-En 1956, Joseph B. Kruskal\cite{kru} propuso varios metodos para encontrar el arbol de recubrimiento minimo (ARM).
-\paragraph{A} Mientras la solucion $S$ (Sets de las aristas) no genere un AR con respecto al grafo $G=(V, A)$, añadir a $S$ la arista de menor valor (longitud) que no forme ciclos con la solución. Eventualmente $S$ formará un ARM.
-\paragraph{B} Sea $V'$ un subset de los vertices del grafo y mientras $S$ no genere un AR. Añadir a la solución el la arista de menor valor que conecte $V'$ o los vertices ya en $S$
-\paragraph{} Notese que A es una generalización de B cuando $V'=V$.
-El objetivo de dicho articulo era presentar un algorítmo mas simple a los ya propuestos en la época, por ello, Kruskal describe el algoritmo con poca precisión y a muy alto nivel sin preocuparse por el coste de dicho metodo.
-Durante estos años, se han propuesto varias opciones para cubrir los detalles tecnicos que Kruskal deja a la imaginación, como puede ser mantener la lista ordenada de aristas o comprobar si añadir una arista a la solución forma algún ciclo y por tanto ha de ser descartada.
-
+\subsection{Descripción de la práctica}
+\paragraph{Programar el problema de encontrar el clique de tamaño máximo en un grafo no dirigido} 
+Dado un grafo $G = (V, E)$, un clique es un conjunto $C \subseteq V$ tal que $\forall u, v \in C, \exists (u, v) \in E$.
+\paragraph{}El problema consiste en encontrar el clique de tamaño maximo en $G$, para ello diferentes estrategias pueden ser utilizadas.
+La más común es utilizar la técnica de ramificacion y poda. Este problema a sido estudiado por varios investigadores a lo largo de los años.
+\paragraph{}En 1990 Carraghan y Pardalos \cite{car} asentaron las bases sobre las que otros investigadoes han ido construyendo. Especialmente introdujeron el concepto del
+set $P(C) \subseteq V$, cuya definición informal se reduce a el conjunto de vertices que pueden formar cliqué con $C$ aunque no garantiza $C + P(C)$ sea un clique. 
+Es decir $\forall v \in P(C) : C + v$ es cliqué.
+\paragraph{} Las estrategias posteriores, en general, tratan de acercar lo maximo posible a la solucion el set $P(V)$ para mejorar la poda.
+Una aproximación comun es utilizar el coloreado de grafos para mejorar el upper bound como hacen Tomita y Seki \cite{tom} o J. Konc, D. Janežič \cite{jonc}. 
 \subsection{Implementación}
 
-\paragraph{Grafo} Con intención de simplificar la implementacion del grafo y optimizar la cota amortizada con respecto a las operaciones \textit(insertar) y \textit(kruskal), en vez de utilizar una estructura de datos basada en listas de adjacencia, 
-el grafo esta definido mediante una lista ordenada de aristas y otra de vertices (esta última duplica información pero ayuda a simplificar la implementación de otras funciones).
-\subparagraph{Demostración} Utilizando el metodo de agregación podemos calcular el coste de implementar la operación insertar $k$ veces y la operacion kruskal $j$ veces.
-Los costes reales son los siguientes para cada implementación.
-\begin{itemize}
-\item \textbf{Listas de adjacencia}:
-	\begin {itemize}
-	\item \textbf{Insertar}: $1$
-	\item \textbf{Kruskal}: $m\log{m} + m\log{n}$ (La primera parte, ordenar la lista, la segunda el algoritmo en si)
-	\end{itemize}
-\item \textbf{Set ordenador de aristas}:
-	\begin{itemize}
-		\item \textbf{Insertar}: $log{m}$
-		\item \textbf{Kruskal}: $m\log{n}$ (No es necesario ordenar)
-	\end{itemize}
-\end{itemize}
-\subparagraph{} Utilizando estos valores podemos calcular el coste amortizado y comparlo para encontrar la implementacion mas eficiente. El lado derecho de la ecuacion correspondera con el set de aristas ordenadas y el izquierdo con la lista de adjacencia.
-\begin{align}
-	\sum_{i=0}^{k}{\log{i}} + jk\log(n) &\leq k + jk\log{k} + jk\log{n} \\
-	k\log{k} + jk\log(n) &\leq k + jk\log{k} + jk\log{n} \\
-	k\log(k) &\leq jk\log(k) \\
-	1 &\leq j
-\end{align}
-Es evidente que unicamente en el caso $j=1$ ambas implementaciones son igual de optimas. En cualquier otra situacion, utilizar un set ordenada de aristas mejora el coste amortizado. 
+\paragraph{Grafo} El grafo se ha implementado mediante listas de adjacencia ordenadas, para evitar duplicar la información (dado que $(u, v) = (v, u)$ $\forall u, v \in V$)
+solo contiene la arista el vertice menor.
+
+Debido a esta implementación el grafo necesita utilizar una lista ordenada, dado que los primeros vertices contienen mas informacion que los últimos.
 \section{El algoritmo}
-\paragraph{}El algoritmo implementa la propuesta A de Kruskal explicada en el punto \ref{sec:algo}. Debido a que el grafo se implementa como una lista de ordenada de aristas encontrar la arista con menor valor (longitud) es trivial.
-\paragraph{}Por otra parte, comprobar si $S\cup\{e'\}$ forma un AR, siendo $S$ la solución parcial y $e'$ la arista mas prometedora del set restante, no es tan trivial. 
-Usando una estructura de partición $P$ se pueden ir uniendo sets, originalmente definidos como conjuntos unitarios de cada vertice, a medida que se introducen aristas en la solución.
-Esto es: $(a, b)\in S \Leftrightarrow \{a\}\cup \{b\} \in P$.
-\paragraph{} El coste de la busqueda de ciclos usando la estructura de partición con compresión de caminos esta en orden $O(\log{n})$, 
-en el peor de los casos esto se ha de repetir para todas las aristas por lo que el coste total del algoritmo esta en orden $O(m\log{n})$ siendo $m$ el numero de aristas y $n$ el numero de vertices de G.
+El algoritmo usado es el de ramificacion y poda visto en clase, con una cola de prioridad para explorar los nodos del arbol más prometedores, un test de factibilidad y dos cotas una optimista y otra pesimista para poder podar el arbol.
+\subsection{El arbol}
+El arbol calcula todas las posibilidades, es decir toda la combinación de nodos $\mathbb{P}(V)$ de menor a mayor tamaño, es decir, en el primer nivel calculamos los sets $C = \{v\}$ $\forall v \in V$. 
+En cada nivel generamos los hijos de cada nodo mediante el set $P(V)$ el cual nos garantiza que todos los hijos son solución al problema. 
+\paragraph{} Debido a que solo el nodo menor contiene la arista en su lista de adjacencia, se garantiza que ningún set esta repetido en otras ramas.
+\subsection{Test de factibilidad}
+El test de factibilidad es sencillo, con comprobar que C es solución basta, dado que si C es solucion cualquier $C^\prime \subseteq C$ es solución.
+\paragraph{} Para comprobar que un set es solución solo tenemos que hacer una sencilla operación matematica 
+\[ \abs{E^\prime} = \dfrac{\abs{C} * (\abs{C} - 1)}{2} \]
+\subsection{Cotas}
+\subsubsection{Simple}
+\paragraph{Optimista.} La cota optimista simple es sencilla de ver utilizando la notación de Carraghan y Pardalos, dado que para cualquier posible solución $C$ optimisticamente todos los elementos en $P(V)$ formaran la solución final. Es decir:
+\[ \text{cota-optimista}(C) = \abs{C} + \abs{P(C)} \]
+\paragraph{Pesimista.} En este problema es imposible comprobar si explorar los nodos de $P(V)$ si pueden o no formar parte del cliqué maximo por lo que la cota pesimista ha de ser
+\[ \text{cota-pesimista}(C) = \abs{C} \]
+\subsubsection{Compleja}
+\paragraph{Optimista.} La cota optimista compleja se aprovecha de la tecnica del coloreado de vertices presentada por Tomita y Seki \cite{tom} de forma simplificada, damos a un color diferente a todos aquellos vertices $u, v \in P(C)$ tal que $(u, v) \in E^\prime$.
+Podemos utilizar esto para delimitar mejor la cota optimista de la siguiente forma:
+\[ \text{cota-optimista}(C) = \abs{C} + S\]
+Donde $S$ es el numero de colores diferentes.
+\paragraph{Pesimista.} La cota pesimista sigue siendo igual que en la Simple por la misma razón.  
+\section{Resultados Experimentales}
+\subsection{Grafos Aleatorios}
+Todas las mediciones se han obtenido aleatoriamente con una semilla "-s 1" para poder replicar los resultados
+\newline\newline
+\hspace*{-4.2cm}
+	\begin{tabular}{| c | c | c c c| c c c | c c c |}
+		\hline
+		Tamaño & Densidad & Sin Poda & Nodos & Sec/Nodo & Poda Simple & Nodos & Sec/Nodo & Poda Compleja & Nodos & Sec/Nodo \\
+		\hline\hline
+		10 & 0.1 & 0.0027 & 11 & 0.0001 & 0.0028 & 2 & 0.0006 & 0.0019 & 1 & 0.0004 \\
+		\hline
+		10 & 0.3 & 0.0927 & 102 & 0.0007 & 0.0462 & 13 & 0.0031 & 0.0334 & 7 & 0.0040 \\
+		\hline
+		10 & 0.5 & 0.3108 & 795 & 0.0003 & 0.0968 & 39 & 0.0022 & 0.0282 & 17 & 0.0014 \\
+		\hline
+		10 & 0.7 & 65.574 & 139373 & 0.0003 & 3.4457 & 1958 & 0.0016 & 0.0808 & 35 & 0.0021 \\
+		\hline
+		10 & 0.9 & 123.5 & 235274 & 0.0004 & 18.874 & 13701 & 0.0012 & 0.1055 & 36 & 0.0026 \\
+		\hline
+		\hline
+		20 & 0.1 & 0.0529 & 61 & 0.0006 & 0.0409 & 7 & 0.0036 & 0.0303 & 4 & 0.0037 \\
+		\hline
+		20 & 0.3 & 2.0066 & 2269 & 0.0008 & 0.5331 & 127 & 0.0040 & 0.1804 & 21 & 0.0073 \\
+		\hline
+		20 & 0.5 & - & - & - & - & - & - & 18.679 & 1779 & 0.0103 \\
+		\hline
+		\hline
+		50 & 0.1 & 0.7174 & 536 & 0.0011 & 0.4065 & 57 & 0.0055 & 0.1860 & 12 & 0.0079 \\
+		\hline
+		50 & 0.3 & - & - & - & 152.62 & 7612 & 0.0199 & 5.6021 & 187 & 0.0290 \\
+		\hline \hline
+		100 & 0.1 & 17.0103 & 4691 & 0.0035 & 7.3379 & 349 & 0.0202 & 1.0722 & 16 & 0.0519 \\
+		\hline
+		100 & 0.2 & - & - & - & - & - & - & 14.185 & 175 & 0.0787 \\
+		\hline
+	\end{tabular}
+\hspace*{-4.2cm}
 \section{Conclusión}
 Es evidente la progresión exponencial del algoritmo, aun asi la aplicacion de cotas aun más costosas por nodo limita el numero de nodos y permite solucionar grafos más grandes y densos.
 \paragraph{} El problema del cliqué es un problema estudiado en profundidaz como cualquier otro problema NP-Completo. Aun habiendo echo grandes avances en el campo que permiten en un tiempo mas o menos razonable gestionar grafos con muchas aristas, aun queda espacio por recorrer dado que la curva exponencial de su complejidad sigue limitando la resolución del problema incluso para ordenadores modernos.
 \begin{thebibliography}{9}
-\bibitem{kru} Kruskal, J. B. (1956). \textit{On the shortest spanning subtree of a graph and the traveling salesman problem.} Proceedings of the American Mathematical Society. 7(1), 48–50.
 \bibitem{car} Carraghan, R. \& Pardalos, P.M. (1990). \textit{An exact algorithm for the maximum clique problem.} Operations Research Letters, 9(6), 375–382.
 \bibitem{tom} E. Tomita, T. Seki, \textit{An efficient branch-and-bound algorithm for finding
 a maximum clique}, Lecture Notes in Computer Science 2631 (2003) 278-
