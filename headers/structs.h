@@ -1,5 +1,6 @@
 
 #pragma once
+#include <vector>
 
 typedef struct {
     int nodes = 0;
@@ -10,8 +11,8 @@ typedef struct {
 
 template <typename T>
 struct bounds {
-    int (*opt)(std::set<T>, std::set<T>, graph<T>); // Optimistic function 
-    int (*pes)(std::set<T>, std::set<T>, graph<T>); // Pesimistic function
+    int (*opt)(std::vector<int>, std::vector<double>, std::vector<double>, int); // Optimistic function 
+    int (*pes)(std::vector<int>, std::vector<double>, std::vector<double>, int); // Pesimistic function
 };
 
 

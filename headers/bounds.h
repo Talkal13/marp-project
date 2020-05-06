@@ -3,8 +3,7 @@
 #include <set>
 #include "../headers/structs.h"
 #include "../headers/globals.h"
-#include "../headers/sets.h"
-#include "../headers/paint.h"
+#include <numeric>
 
 /**
  * 
@@ -13,14 +12,14 @@
  * 
  */
 
-template <class T>
-int optimistic_bound_0(std::set<T> C, std::set<T> P, graph<T> g) {
-    return g.V().size();
+
+int optimistic_bound_0(std::vector<int> S, std::vector<double> C, std::vector<double> V, int E) {
+    return 0;
 }
 
-template <class T>
-int pesimistic_bound_0(std::set<T> C, std::set<T> P, graph<T> g) {
-    return 0;
+
+int pesimistic_bound_0(std::vector<int> S, std::vector<double> C, std::vector<double> V, int E) {
+    return V.size();
 }
 
 /**
@@ -28,18 +27,17 @@ int pesimistic_bound_0(std::set<T> C, std::set<T> P, graph<T> g) {
  * Bounds: level 1
  * 
  * Simple bound
- * Optimistic: Assumes all candidates of P are part of the solution
+ * Optimistic: The bare minimun -> Total Volume / Volume of each box
  * 
  */
 
-template <class T>
-int optimistic_bound_1(std::set<T> C, std::set<T> P, graph<T> g) {
-    return C.size() + P.size();
+
+int optimistic_bound_1(std::vector<int> S, std::vector<double> C, std::vector<double> V, int E) {
+    return 0;
 }
 
-template <class T>
-int pesimistic_bound_1(std::set<T> C, std::set<T> P, graph<T> g) {
-    return C.size();
+int pesimistic_bound_1(std::vector<int> S, std::vector<double> C, std::vector<double> V, int E) {
+    return 0;
 }
 
 /**
@@ -50,12 +48,12 @@ int pesimistic_bound_1(std::set<T> C, std::set<T> P, graph<T> g) {
  *  
  */
 
-template <class T>
-int optimistic_bound_2(std::set<T> C, std::set<T> P, graph<T> g) {
-    return C.size() + paint_nodes<T>(graph<T>(g, P)).get_colors();
+
+int optimistic_bound_2(std::vector<int> S, std::vector<double> C, std::vector<double> V, int E) {
+    return C.size();
 }
 
-template <class T>
-int pesimistic_bound_2(std::set<T> C, std::set<T> P, graph<T> g) {
+
+int pesimistic_bound_2(std::vector<int> S, std::vector<double> C, std::vector<double> V, int E) {
     return C.size();
 }

@@ -1,15 +1,15 @@
 #include <iostream>
-#include "../headers/graph.h"
 #include <string>
 #include <sstream>
 #include <utility>
 #include <iterator>
 #include <fstream>
 #include <time.h>
+#include <vector>
 #include <unistd.h>
-#include "../headers/max_clique.h"
 #include "../headers/bounds.h"
 #include "../headers/globals.h"
+#include "../headers/envases_opt.h"
 
 
 using namespace std;
@@ -17,15 +17,12 @@ using namespace std;
 benchmark marks;
 bounds<int> bound;
 
-bool parse(int args, char *argv[], std::string &filename, string &fileout, int &seed, bool &random);
-template <class A>
-void translate_dimacs(graph<A> &graph, std::string filename);
 std::tuple<double, double, int, int> run_test_from_file(std::string filename, int b);
-std::tuple<double, double, int, int> run_test_random(int seed, float p, int N, int b);
+std::tuple<double, double, int, int> run_test_random(int, int, double, double);
 void write_to_file(std::string fileout, std::tuple<double, double, int, int> result);
 void print_help_message();
 template <class T>
-std::tuple<double, double, int, int> run_test(graph<T> g, int x, float p);
+std::tuple<double, double, int, int> run_test(std::vector<double>, double);
 
 int main(int argc, char *argv[]) {
     
@@ -131,33 +128,6 @@ void print_help_message() {
 }
 
 
-
-template <class A>
-void translate_dimacs(graph<A> &graph, std::string filename) {
-    std::ifstream file;
-    file.open(filename);
-    if (file.fail()) return;
-    char delimeter;
-    std::string s;
-    int nodes, edges;
-    while(file >> delimeter) {
-        switch(delimeter) {
-            case 'p':
-                file >> s >> nodes >> edges;
-                //graph.nodes = nodes;
-                //graph.edges = edges; 
-                break;
-            case 'e':
-                file >> nodes >> edges;
-                graph.add_edge(std::make_pair(nodes, edges));
-                break;
-            default:
-                getline(file, s);
-        }
-    }
-    file.close();
-}
-
 void clean_marks() {
     marks.nodes = 0;
     marks.avg_clocks_node = 0;
@@ -165,11 +135,11 @@ void clean_marks() {
 }
 
 template <class T>
-std::tuple<double, double, int, int> run_test(graph<T> g, int x, float p) {
+std::tuple<double, double, int, int> run_test(std::vector<double> volumes, double E) {
 
     double result_clique = 0;
     clean_marks();
-    std::set<T> result;
+    std::vector<int> result;
     
     // Bound selection
     switch(x) {
@@ -191,44 +161,42 @@ std::tuple<double, double, int, int> run_test(graph<T> g, int x, float p) {
 
     // Execution of the program
     marks.complete_time = clock();
-    result = bnb_max_clique_benchmarked(g);
+    result = brb_envases(E, V);
     marks.complete_time = clock() - marks.complete_time;
 
     result_clique = ((double) marks.complete_time) / CLOCKS_PER_SEC;
     double time_nodes = ((double) marks.avg_clocks_node / (double) marks.nodes) / CLOCKS_PER_SEC;
     
     cout << "Result: ";
-    for (typename std::set<T>::iterator it = result.begin(); it != result.end(); ++it) {
+    for (typename std::vector<int>::iterator it = result.begin(); it != result.end(); ++it) {
         cout << *it << " ";
     }
     cout << endl;
 
     cout << "Avg time: " << result_clique << endl 
     << "Solution size: " << result.size() << endl 
-    << "Original Size: " << g.size() << endl 
+    << "Original Size: " << V.size() << endl 
     << "Nodes explored: " << marks.nodes << endl
     << "Average Time / node: " << time_nodes << endl;
-    if (p != -1.0) cout << "Density: " << p << endl;
     cout << endl;
 
-    return std::make_tuple(result_clique, time_nodes, g.size(), marks.nodes);
+    return std::make_tuple(result_clique, time_nodes, V.size(), marks.nodes);
 }
 
-std::tuple<double, double, int, int> run_test_random(int seed, float p, int N, int b) {
+std::tuple<double, double, int, int> run_test_random(int seed, int N, double E, double l_b) {
     if (seed == -1)
         srand(time(NULL));
     else
         srand(seed);
 
-    graph<int> graph;
+    std::vector<double> volumes;
+
 
     for (int i = 1; i <= N; i++) {
-        for (int j = 1; j <= N; j++) {
-            if (rand() % 100 < p * 100) graph.add_edge({i, j});
-        }
+        volumes.push_back(rand() % E + l_b);
     }
 
-    return run_test(graph, b, p);
+    return run_test(volumes, E);
 
 }
 
