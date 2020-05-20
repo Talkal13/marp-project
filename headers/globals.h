@@ -8,4 +8,4 @@
  * 
  */
 extern benchmark marks;
-extern bounds<int> bound;
+extern bounds bound;

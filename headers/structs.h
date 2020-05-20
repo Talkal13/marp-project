@@ -9,10 +9,9 @@ typedef struct {
 } benchmark;
 
 
-template <typename T>
 struct bounds {
-    int (*opt)(std::vector<int>, std::vector<double>, std::vector<double>, int); // Optimistic function 
-    int (*pes)(std::vector<int>, std::vector<double>, std::vector<double>, int); // Pesimistic function
+    unsigned (*opt)(std::vector<int>, std::vector<double>, std::vector<double>, double); // Optimistic function 
+    unsigned (*pes)(std::vector<int>, std::vector<double>, std::vector<double>, double); // Pesimistic function
 };
 
 

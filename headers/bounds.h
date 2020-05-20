@@ -1,9 +1,11 @@
 
 #pragma once
-#include <set>
+#include <vector>
 #include "../headers/structs.h"
 #include "../headers/globals.h"
 #include <numeric>
+#include <math.h>
+#include <algorithm>
 
 /**
  * 
@@ -13,12 +15,12 @@
  */
 
 
-int optimistic_bound_0(std::vector<int> S, std::vector<double> C, std::vector<double> V, int E) {
-    return 0;
+unsigned optimistic_bound_0(std::vector<int> S, std::vector<double> C, std::vector<double> V, double E) {
+    return 1;
 }
 
 
-int pesimistic_bound_0(std::vector<int> S, std::vector<double> C, std::vector<double> V, int E) {
+unsigned pesimistic_bound_0(std::vector<int> S, std::vector<double> C, std::vector<double> V, double E) {
     return V.size();
 }
 
@@ -27,17 +29,18 @@ int pesimistic_bound_0(std::vector<int> S, std::vector<double> C, std::vector<do
  * Bounds: level 1
  * 
  * Simple bound
- * Optimistic: The bare minimun -> Total Volume / Volume of each box
+ * Optimistic: The bare minimun -> Overall pendent space / Volume of each box
+ * Pesimistic: NextFit -> The object is inserted in the first bin available
  * 
  */
 
 
-int optimistic_bound_1(std::vector<int> S, std::vector<double> C, std::vector<double> V, int E) {
-    return 0;
+unsigned optimistic_bound_1(std::vector<int> S, std::vector<double> C, std::vector<double> V, double E) {
+    return C.size();
 }
 
-int pesimistic_bound_1(std::vector<int> S, std::vector<double> C, std::vector<double> V, int E) {
-    return 0;
+unsigned pesimistic_bound_1(std::vector<int> S, std::vector<double> C, std::vector<double> V, double E) {
+    return V.size();
 }
 
 /**
@@ -49,11 +52,23 @@ int pesimistic_bound_1(std::vector<int> S, std::vector<double> C, std::vector<do
  */
 
 
-int optimistic_bound_2(std::vector<int> S, std::vector<double> C, std::vector<double> V, int E) {
-    return C.size();
+unsigned optimistic_bound_2(std::vector<int> S, std::vector<double> C, std::vector<double> V, double E) {
+    double pend = std::accumulate(V.begin() + S.size(), V.end(), 0);
+    double hueco = std::accumulate(C.begin(), C.end(), 0);
+    int x = int(ceil((pend - hueco) / E));
+    return C.size() + std::max(0, x);
 }
 
 
-int pesimistic_bound_2(std::vector<int> S, std::vector<double> C, std::vector<double> V, int E) {
-    return C.size();
+unsigned pesimistic_bound_2(std::vector<int> S, std::vector<double> C, std::vector<double> V, double E) {
+    std::sort(V.begin(), V.end());
+    unsigned pes = C.size();
+    for (unsigned i = S.size(); i < V.size(); i++) {
+        unsigned j = 0;
+        while (C.size() > j && V[i] > C[j]) j += 1;  
+        if (C.size() <= j) C.push_back(E - V[i]);
+        else C[j] = C[j] - V[i];
+        pes = std::max(pes, j);
+    }
+    return pes;
 }

@@ -15,14 +15,14 @@
 using namespace std;
 
 benchmark marks;
-bounds<int> bound;
+bounds bound;
 
 std::tuple<double, double, int, int> run_test_from_file(std::string filename, int b);
 std::tuple<double, double, int, int> run_test_random(int, int, double, double);
 void write_to_file(std::string fileout, std::tuple<double, double, int, int> result);
 void print_help_message();
-template <class T>
 std::tuple<double, double, int, int> run_test(std::vector<double>, double);
+void select_bound(unsigned x);
 
 int main(int argc, char *argv[]) {
     
@@ -32,12 +32,13 @@ int main(int argc, char *argv[]) {
     bool random = true;
     bool out = false;
     bool developer = false;
-    float p = 0.5;
-    int bound = 0;
-    int size = 1;
+    int lower = 0;
+    int N = 1;
+    double E = 10;
     int seed = -1;
+    unsigned x = 0;
     int arg;
-    while ((arg = getopt(argc, argv, "hs:o:f:b:n:p:d")) != -1) {
+    while ((arg = getopt(argc, argv, "hs:o:f:b:n:p:de:x:")) != -1) {
         switch (arg) {
             case 'h':
                 print_help_message();
@@ -54,13 +55,16 @@ int main(int argc, char *argv[]) {
                 random = false;
                 break;
             case 'n':
-                size = stoi(optarg);
+                N = stoi(optarg);
                 break;
             case 'b':
-                bound = stoi(optarg);
+                x = stoi(optarg);
                 break;
-            case 'p':
-                p = stof(optarg);
+            case 'x':
+                lower = stod(optarg);
+                break;
+            case 'e':
+                E = stod(optarg);
                 break;
             case 'd':
                 developer = true;
@@ -76,11 +80,11 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    
+    select_bound(x);
     std::tuple<double, double, int,  int> result;
 
     if (developer) {
-        result = run_test_random(seed, p, size, bound);
+        result = run_test_random(seed, N, E, lower);
         if (out) {
             write_to_file(fileout, result);
         }
@@ -88,15 +92,15 @@ int main(int argc, char *argv[]) {
     }
         
     if (random) {
-        for (int i = 1; i <= size; i++) {
-            result = run_test_random(seed, p, i, bound);
+        for (int i = 1; i <= N; i++) {
+            result = run_test_random(seed, i, E, lower);
             if (out) {
                 write_to_file(fileout, result);
             }
         }
     }
     else {
-        result = run_test_from_file(filename, bound);
+        result = run_test_from_file(filename, lower);
         if (out) {
             write_to_file(fileout, result);
         }
@@ -127,20 +131,7 @@ void print_help_message() {
     cout << endl;
 }
 
-
-void clean_marks() {
-    marks.nodes = 0;
-    marks.avg_clocks_node = 0;
-    marks.complete_time = 0;
-}
-
-template <class T>
-std::tuple<double, double, int, int> run_test(std::vector<double> volumes, double E) {
-
-    double result_clique = 0;
-    clean_marks();
-    std::vector<int> result;
-    
+void select_bound(unsigned x) {
     // Bound selection
     switch(x) {
         case 0:
@@ -156,6 +147,22 @@ std::tuple<double, double, int, int> run_test(std::vector<double> volumes, doubl
             bound.pes = pesimistic_bound_2;
             break;
     }
+    return;
+}
+
+
+void clean_marks() {
+    marks.nodes = 0;
+    marks.avg_clocks_node = 0;
+    marks.complete_time = 0;
+}
+
+
+std::tuple<double, double, int, int> run_test(std::vector<double> V, double E) {
+
+    double result_clique = 0;
+    clean_marks();
+    std::vector<int> result;
 
     
 
@@ -173,8 +180,10 @@ std::tuple<double, double, int, int> run_test(std::vector<double> volumes, doubl
     }
     cout << endl;
 
+    int max = *std::max_element(result.begin(), result.end());
+
     cout << "Avg time: " << result_clique << endl 
-    << "Solution size: " << result.size() << endl 
+    << "Solution size: " << (max + 1) << endl 
     << "Original Size: " << V.size() << endl 
     << "Nodes explored: " << marks.nodes << endl
     << "Average Time / node: " << time_nodes << endl;
@@ -193,7 +202,7 @@ std::tuple<double, double, int, int> run_test_random(int seed, int N, double E, 
 
 
     for (int i = 1; i <= N; i++) {
-        volumes.push_back(rand() % E + l_b);
+        volumes.push_back(rand() % int(E) + l_b);
     }
 
     return run_test(volumes, E);
@@ -201,11 +210,5 @@ std::tuple<double, double, int, int> run_test_random(int seed, int N, double E, 
 }
 
 std::tuple<double, double, int,  int> run_test_from_file(std::string filename, int b) {
-
-    // Translate from dimacs convention to graph
-    graph<int> p;
-    translate_dimacs(p, filename);
-
-    
-    return run_test(p, b, -1.0);
+    return std::tuple<double, double, int, int>();
 }
